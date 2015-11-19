@@ -1,18 +1,3 @@
-<div id="table-of-contents">
-<h2>Table of Contents</h2>
-<div id="text-table-of-contents">
-<ul>
-<li><a href="#sec-1">1. Transcript search for 6.004.2x</a>
-<ul>
-<li><a href="#sec-1-1">1.1. Description</a></li>
-<li><a href="#sec-1-2">1.2. Features</a></li>
-<li><a href="#sec-1-3">1.3. Considerations</a></li>
-<li><a href="#sec-1-4">1.4. UI</a></li>
-</ul>
-</li>
-</ul>
-</div>
-</div>
 
 # Transcript search for 6.004.2x<a id="sec-1" name="sec-1"></a>
 

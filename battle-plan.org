@@ -1,4 +1,9 @@
 * Transcript search for 6.004.2x
+** Description
+Until edx gets a search feature for transcripts, this should suffice.
+It's not pretty, but it works without any backend. If you want to add
+something, then clone, hack and pull request. I'll most likely merge it.
+
 ** Features
 - Allow users to search the transcripts.
 - Updates result on the fly.
@@ -8,8 +13,9 @@
 
 ** Considerations
 - Don't need to optimize this, the data set is small.  linear search
-  should work fine! If it slows down later, then maybe there is a
-  js 
+  should work fine! If it slows down later, then maybe there is a js
+  version of sqlite that could access local storage, or maybe index
+  with a bloom filter.
 
 - Should run completely in javascript
 

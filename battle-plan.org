@@ -8,7 +8,8 @@
 
 ** Considerations
 - Don't need to optimize this, the data set is small.  linear search
-  should work fine!
+  should work fine! If it slows down later, then maybe there is a
+  js 
 
 - Should run completely in javascript
 

@@ -2,49 +2,65 @@
 //
 var nil = null;
 
-
-
 function hasDirectiveWE(terms) {
-    return $.inArray("#we");
+    return $.inArray("#we", terms) != -1;
 }
 
 function hasDirectiveLEC(terms) {
-    return $.inArray("#lec");
+    return $.inArray("#lec", terms) != -1;
 }
 
 function removeDirectives(terms) {
-    terms = jQuery.grep(terms, function(value) {
-        return value != "#we" || value != "#lec";
-    });
-    return terms;
+    return terms
+        .filter(function(x) { return x != "#lec"; })
+        .filter(function(x) { return x != "#we"; }); 
 }
 
+// slow linear search is good enough for now.    
 // Terms -> [items that contain terms]
-function searchForTerm(lecId, term) {
-    if (term == nil) {
+function searchForTerms(lecId, searchTerms) {
+    if (searchTerms == nil) {
         return [];
     }
-    // slow linear search is good enough for now.    
+    
     var lec = JSON_transcripts[lecId];
     var items = lec.items;
-    term = term.toLowerCase();
-    terms = term.split(" ");
+    searchTerms = searchTerms.toLowerCase();
+    terms = searchTerms.split(" ");
 
+    // which directives are set?
     var workedExamplesOnly = hasDirectiveWE(terms);
     var lecturesOnly = hasDirectiveLEC(terms);
     terms = removeDirectives(terms);
-    
+
     var results = [];
 
-    // first pass matches on a single term.
+    // check to see if item.text contains all terms
     items.forEach(function(item) {
         txt = item.text.toLowerCase();
-        // if term is in the txt
-        if (txt.indexOf(term) != -1) {
-            results.push(item);
-        }
-    });
+        // iterate over terms
 
+        var foundTerm = true;
+        terms.forEach(function(term) {
+            if (txt.indexOf(term) == -1) {
+                // couldn't find this term in the item text
+                foundTerm = false;
+                return;
+            } 
+        });
+
+        if (foundTerm) {
+            if (workedExamplesOnly && item.is_worked_example) {
+                results.push(item);
+            }
+            if (lecturesOnly && item.is_lecture) {
+                results.push(item);
+            }
+            if (!lecturesOnly && !workedExamplesOnly) {
+                results.push(item);
+            }
+        }            
+    });
     // remaining passes remove matches.
     
     return results;
@@ -55,7 +71,12 @@ function generateDiv(url, item) {
     
     results.append("<hr>");
     results.append("<p>" + item.text + "</p>");
-    results.append("<span><a href='" + url + "'>lecture</a><span>");   
+
+    if (item.is_worked_example) {
+        results.append("<span>worked example <a href='" + url + "'>lecture</a><span>");
+    } else { 
+        results.append("<span><a href='" + url + "'>lecture</a><span>");
+    }
     results.append(" from time: ");
     results.append(item.start); 
     results.append(" to: ");
@@ -63,19 +84,18 @@ function generateDiv(url, item) {
 }
 
 function clearResultsDiv() {
-    $("#results").empty()
+    $("#results").empty();
 }
 
-function hey(term) {
+function hey(terms) {
     clearResultsDiv();
-    
     //return ss + " Hey!";
     var lectures = Object.keys(JSON_transcripts);
     var numFound = 0;
     var accum = [];
     lectures.forEach(function(lecId){
         var lecture = JSON_transcripts[lecId];
-        var results = searchForTerm(lecId, term);
+        var results = searchForTerms(lecId, terms);
         if (results.length!=0) {
             accum.push(results);
             numFound += results.length;

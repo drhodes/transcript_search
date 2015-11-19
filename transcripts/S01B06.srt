@@ -1,0 +1,224 @@
+0
+00:00:00,000 --> 00:00:07,000
+Having talked about the storage resources provided by the Beta ISA, let's design the Beta instructions themselves.
+
+1
+00:00:07,000 --> 00:00:15,000
+This might be a good time to print a copy of the handout called the "Summary of Beta Instruction Formats" so you'll have it for handy reference.
+
+2
+00:00:15,000 --> 00:00:32,000
+The Beta has three types of instructions: compute instructions that perform arithmetic and logic operations on register values, load and store instructions that access values in main memory, and branch instructions that change the value of the program counter.
+
+3
+00:00:32,000 --> 00:00:35,000
+We'll discuss each class of instructions in turn.
+
+4
+00:00:35,000 --> 00:00:48,000
+In the Beta ISA, all the instruction encodings are the same size: each instruction is encoded in 32 bits and hence occupies exactly one 32-bit word in main memory.
+
+5
+00:00:48,000 --> 00:00:53,000
+This instruction encoding leads to simpler control-unit logic for decoding instructions.
+
+6
+00:00:53,000 --> 00:00:57,000
+And computing the next value of the program counter is very simple:
+
+7
+00:00:57,000 --> 00:01:02,000
+for most instructions, the next instruction can be found in the following memory location.
+
+8
+00:01:02,000 --> 00:01:08,000
+We just need to add 4 to the current value of program counter to advance to the next instruction.
+
+9
+00:01:08,000 --> 00:01:20,000
+As we saw in Part 1 of the course, fixed-length encodings are often inefficient in the sense that the same information content (in this case, the encoded program) can be encoded using fewer bits.
+
+10
+00:01:20,000 --> 00:01:28,000
+To do better we would need a variable-length encoding for instructions, where frequently-occurring instructions would use a shorter encoding.
+
+11
+00:01:28,000 --> 00:01:40,000
+But hardware to decode variable-length instructions is complex since there may be several instructions packed into one memory word, while other instructions might require loading several memory words.
+
+12
+00:01:40,000 --> 00:01:46,000
+The details can be worked out, but there's a performance and energy cost associated with the more efficient encoding.
+
+13
+00:01:46,000 --> 00:01:57,000
+Nowadays, advances in memory technology have made memory size less of an issue and the focus is on the higher-performance needed by today's applications.
+
+14
+00:01:57,000 --> 00:02:05,000
+Our choice of a fixed-length encoding leads to larger code size, but keeps the hardware execution engine small and fast.
+
+15
+00:02:05,000 --> 00:02:11,000
+The computation performed by the Beta datapath happens in the arithmetic-and-logic unit (ALU).
+
+16
+00:02:11,000 --> 00:02:15,000
+We'll be using the ALU designed in Part 1 of the course.
+
+17
+00:02:15,000 --> 00:02:19,000
+The Beta ALU instructions have 4 instruction fields.
+
+18
+00:02:19,000 --> 00:02:26,000
+There's a 6-bit field specifying the ALU operation to be performed -- this field is called the opcode.
+
+19
+00:02:26,000 --> 00:02:33,000
+The two source operands come from registers whose numbers are specified by the 5-bit "ra" and "rb" fields.
+
+20
+00:02:33,000 --> 00:02:38,000
+So we can specify any register from R0 to R31 as a source operand.
+
+21
+00:02:38,000 --> 00:02:42,000
+The destination register is specified by the 5-bit "rc" field.
+
+22
+00:02:42,000 --> 00:02:50,000
+This instruction format uses 21 bits of the 32-bit word, the remaining bits are unused and should be set to 0.
+
+23
+00:02:50,000 --> 00:02:54,000
+The diagram shows how the fields are positioned in the 32-bit word.
+
+24
+00:02:54,000 --> 00:03:06,000
+The choice of position for each field is somewhat arbitrary, but to keep the hardware simple, when we can we'll want to use the same field positions for similar fields in the other instruction encodings.
+
+25
+00:03:06,000 --> 00:03:12,000
+For example, the opcode will always be found in bits [31:26] of the instruction.
+
+26
+00:03:12,000 --> 00:03:16,000
+Here's the binary encoding of an ADD instruction.
+
+27
+00:03:16,000 --> 00:03:28,000
+The opcode for ADD is the 6-bit binary value 0b100000 -- you can find the binary for each opcode in the Opcode Table in the handout mentioned before.
+
+28
+00:03:28,000 --> 00:03:34,000
+The "rc" field specifies that the result of the ADD will be written into R3.
+
+29
+00:03:34,000 --> 00:03:41,000
+And the "ra" and "rb" fields specify that the first and second source operands are R1 and R2 respectively.
+
+30
+00:03:41,000 --> 00:03:49,000
+So this instruction adds the 32-bit values found in R1 and R2, writing the 32-bit sum into R3.
+
+31
+00:03:49,000 --> 00:03:56,000
+Note that it's permissible to refer to a particular register several times in the same instruction.
+
+32
+00:03:56,000 --> 00:04:03,000
+So, for example, we could specify R1 as the register for both source operands AND also as the destination register.
+
+33
+00:04:03,000 --> 00:04:13,000
+If we did, we'd be adding R1 to R1 and writing the result back into R1, which would effectively multiply the value in R1 by 2.
+
+34
+00:04:13,000 --> 00:04:24,000
+Since it's tedious and error-prone to transcribe 32-bit binary values, we'll often use hexadecimal notation for the binary representation of an instruction.
+
+35
+00:04:24,000 --> 00:04:33,000
+In this example, the hexadecimal notation for the encoded instruction is 0x80611000.
+
+36
+00:04:33,000 --> 00:04:43,000
+However, it's *much* easier if we describe the instructions using a functional notation, e.g., "ADD(r1,r2,r3)".
+
+37
+00:04:43,000 --> 00:04:47,000
+Here we use a symbolic name for each operation, called a mnemonic.
+
+38
+00:04:47,000 --> 00:04:48,000
+For this instruction the mnemonic is "ADD", followed by a parenthesized list of operands, in this case the two source operands (r1 and r2), then the destination (r3).
+
+39
+00:04:48,000 --> 00:05:11,000
+So we'll understand that ADD(ra,rb,rc) is shorthand for asking the Beta to compute the sum of the values in registers ra and rb, writing the result as the new value of register rc.
+
+40
+00:05:11,000 --> 00:05:16,000
+Here's the list of the mnemonics for all the operations supported by the Beta.
+
+41
+00:05:16,000 --> 00:05:22,000
+There is a detailed description of what each instruction does in the Beta Documentation handout.
+
+42
+00:05:22,000 --> 00:05:28,000
+Note that all these instructions use same 4-field template, differing only in the value of the opcode field.
+
+43
+00:05:28,000 --> 00:05:36,000
+This first step was pretty straightforward -- we simply provided instruction encodings for the basic operations provided by the ALU.
+
+44
+00:05:36,000 --> 00:05:43,000
+Now that we have our first group of instructions, we can create a more concrete implementation sketch.
+
+45
+00:05:43,000 --> 00:05:45,000
+Here we see our proposed datapath.
+
+46
+00:05:45,000 --> 00:05:53,000
+The 5-bit "ra" and "rb" fields from the instruction are used to select which of the 32 registers will be used for the two operands.
+
+47
+00:05:53,000 --> 00:06:06,000
+Note that register 31 isn't actually a read/write register, it's just the 32-bit constant 0, so that selecting R31 as an operand results in using the value 0.
+
+48
+00:06:06,000 --> 00:06:12,000
+The 5-bit "rc" field from the instruction selects which register will be written with the result from the ALU.
+
+49
+00:06:12,000 --> 00:06:25,000
+Not shown is the hardware needed to translate the instruction opcode to the appropriate ALU function code -- perhaps a 64-location ROM could be used to perform the translation by table lookup.
+
+50
+00:06:25,000 --> 00:06:30,000
+The program counter logic supports simple sequential execution of instructions.
+
+51
+00:06:30,000 --> 00:06:36,000
+It's a 32-bit register whose value is updated at the end of each instruction by adding 4 to its current value.
+
+52
+00:06:36,000 --> 00:06:42,000
+This means the next instruction will come from the memory location following the one that holds the current instruction.
+
+53
+00:06:42,000 --> 00:06:47,000
+In this diagram we see one of the benefits of a RISC architecture:
+
+54
+00:06:47,000 --> 00:06:52,000
+there's not much logic needed to decode the instruction to produce the signals needed to control the datapath.
+
+55
+00:06:52,000 --> 00:06:57,000
+In fact, many of the instruction fields are used as-is!
+

@@ -1,0 +1,184 @@
+0
+00:00:00,000 --> 00:00:03,000
+Welcome to Part 2 of 6.004x!
+
+1
+00:00:03,000 --> 00:00:13,000
+In this part of the course, we turn our attention to the design and implementation of digital systems that can perform useful computations on different types of binary data.
+
+2
+00:00:13,000 --> 00:00:21,000
+We'll come up with a general-purpose design for these systems, we which we call "computers", so that they can serve as useful tools in many diverse application areas.
+
+3
+00:00:21,000 --> 00:00:33,000
+Computers were first used to perform numeric calculations in science and engineering, but today they are used as the central control element in any system where complex behavior is required.
+
+4
+00:00:33,000 --> 00:00:37,000
+We have a lot to do in this chapter, so let's get started!
+
+5
+00:00:37,000 --> 00:00:42,000
+Suppose we want to design a system to compute the factorial function on some numeric argument N.
+
+6
+00:00:42,000 --> 00:00:49,000
+N! is defined as the product of N times N-1 times N-2, and so on down to 1.
+
+7
+00:00:49,000 --> 00:00:57,000
+We can use a programming language like C to describe the sequence of operations necessary to perform the factorial computation.
+
+8
+00:00:57,000 --> 00:01:00,000
+In this program there are two variables, "a" and "b".
+
+9
+00:01:00,000 --> 00:01:04,000
+"a" is used to accumulate the answer as we compute it step-by-step.
+
+10
+00:01:04,000 --> 00:01:07,000
+"b" is used to hold the next value we need to multiply.
+
+11
+00:01:07,000 --> 00:01:11,000
+"b" starts with the value of the numeric argument N.
+
+12
+00:01:11,000 --> 00:01:25,000
+The DO loop is where the work gets done: on each loop iteration we perform one of the multiplies from the factorial formula, updating the value of the accumulator "a" with the result, then decrementing "b" in preparation for the next loop iteration.
+
+13
+00:01:25,000 --> 00:01:33,000
+If we want to implement a digital system that performs this sequence of operations, it makes sense to use sequential logic!
+
+14
+00:01:33,000 --> 00:01:40,000
+Here's the state transition diagram for a high-level finite-state machine designed to perform the necessary computations in the desired order.
+
+15
+00:01:40,000 --> 00:01:47,000
+We call this a high-level FSM since the "outputs" of each state are more than simple logic levels.
+
+16
+00:01:47,000 --> 00:01:54,000
+They are formulas indicating operations to be performed on source variables, storing the result in a destination variable.
+
+17
+00:01:54,000 --> 00:02:01,000
+The sequence of states visited while the FSM is running mirrors the steps performed by the execution of the C program.
+
+18
+00:02:01,000 --> 00:02:11,000
+The FSM repeats the LOOP state until the new value to be stored in "b" is equal to 0, at which point the FSM transitions into the final DONE state.
+
+19
+00:02:11,000 --> 00:02:19,000
+The high-level FSM is useful when designing the circuitry necessary to implement the desired computation using our digital logic building blocks.
+
+20
+00:02:19,000 --> 00:02:23,000
+We'll use 32-bit D-registers to hold the "a" and "b" values.
+
+21
+00:02:23,000 --> 00:02:32,000
+And we'll need a 2-bit D-register to hold the 2-bit encoding of the current state, i.e., the encoding for either START, LOOP or DONE.
+
+22
+00:02:32,000 --> 00:02:37,000
+We'll include logic to compute the inputs required to implement the correct state transitions.
+
+23
+00:02:37,000 --> 00:02:42,000
+In this case, we need to know if the new value for "b" is zero or not.
+
+24
+00:02:42,000 --> 00:02:52,000
+And, finally, we'll need logic to perform multiply and decrement, and to select which value should be loaded into the "a" and "b" registers at the end of each FSM cycle.
+
+25
+00:02:52,000 --> 00:02:59,000
+Let's start by designing the logic that implements the desired computations -- we call this part of the logic the "datapath".
+
+26
+00:02:59,000 --> 00:03:04,000
+First we'll need two 32-bit D-registers to hold the "a" and "b" values.
+
+27
+00:03:04,000 --> 00:03:09,000
+Then we'll draw the combinational logic blocks needed to compute the values to be stored in those registers.
+
+28
+00:03:09,000 --> 00:03:17,000
+In the START state , we need the constant 1 to load into the "a" register and the constant N to load into the "b" register.
+
+29
+00:03:17,000 --> 00:03:24,000
+In the LOOP state, we need to compute a*b for the "a" register and b-1 for the "b" register.
+
+30
+00:03:24,000 --> 00:03:30,000
+Finally, in the DONE state , we need to be able to reload each register with its current value.
+
+31
+00:03:30,000 --> 00:03:36,000
+We'll use multiplexers to select the appropriate value to load into each of the data registers.
+
+32
+00:03:36,000 --> 00:03:47,000
+These multiplexers are controlled by 2-bit select signals that choose which of the three 32-bit input values will be the 32-bit value to be loaded into the register.
+
+33
+00:03:47,000 --> 00:03:56,000
+So by choosing the appropriate values for WASEL and WBSEL, we can make the datapath compute the desired values at each step in the FSM's operation.
+
+34
+00:03:56,000 --> 00:04:02,000
+Next we'll add the combinational logic needed to control the FSM's state transitions.
+
+35
+00:04:02,000 --> 00:04:07,000
+In this case, we need to test if the new value to be loaded into the "b" register is zero.
+
+36
+00:04:07,000 --> 00:04:13,000
+The Z signal from the datapath will be 1 if that's the case and 0 otherwise.
+
+37
+00:04:13,000 --> 00:04:25,000
+Now we're all set to add the hardware for the control FSM, which has one input (Z) from the datapath and generates two 2-bit outputs (WASEL and WBSEL) to control the datapath.
+
+38
+00:04:25,000 --> 00:04:29,000
+Here's the truth table for the FSM's combinational logic.
+
+39
+00:04:29,000 --> 00:04:34,000
+S is the current state, encoded as a 2-bit value, and S' is the next state.
+
+40
+00:04:34,000 --> 00:04:40,000
+Using our skills from Part 1 of the course, we're ready to draw a schematic for the system!
+
+41
+00:04:40,000 --> 00:04:44,000
+We know how to design the appropriate multiplier and decrement circuitry.
+
+42
+00:04:44,000 --> 00:04:48,000
+And we can use our standard register-and-ROM implementation for the control FSM.
+
+43
+00:04:48,000 --> 00:05:01,000
+The Z signal from the datapath is combined with the 2 bits of current state to form the 3 inputs to the combinational logic, in this case realized by a read-only memory with 2^3=8 locations.
+
+44
+00:05:01,000 --> 00:05:10,000
+Each ROM location has the appropriate values for the 6 output bits: 2 bits each for WASEL, WBSEL, and next state.
+
+45
+00:05:10,000 --> 00:05:17,000
+The table on the right shows the ROM contents, which are easily determined from the table on the previous slide.
+

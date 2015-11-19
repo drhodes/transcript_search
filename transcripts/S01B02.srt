@@ -1,0 +1,168 @@
+0
+00:00:00,000 --> 00:00:05,000
+Okay, we've figured out a way to design hardware to perform a particular computation:
+
+1
+00:00:05,000 --> 00:00:12,000
+Draw the state transition diagram for an FSM that describes the sequence of operations needed to complete the computation.
+
+2
+00:00:12,000 --> 00:00:21,000
+Then construct the appropriate datapath, using registers to store values and combinational logic to implement the needed operations.
+
+3
+00:00:21,000 --> 00:00:26,000
+Finally build an FSM to generate the control signals required by the datapath.
+
+4
+00:00:26,000 --> 00:00:30,000
+Is the datapath plus control logic itself an FSM?
+
+5
+00:00:30,000 --> 00:00:35,000
+Well, it has registers and some combinational logic, so, yes, it is an FSM.
+
+6
+00:00:35,000 --> 00:00:38,000
+Can we draw the truth table?
+
+7
+00:00:38,000 --> 00:00:40,000
+In theory, yes.
+
+8
+00:00:40,000 --> 00:00:49,000
+In practice, there are 66 bits of registers and hence 66 bits of state, so our truth table would need 2^66 rows!
+
+9
+00:00:49,000 --> 00:00:53,000
+Hmm, not very likely that we'd be able to draw the truth table!
+
+10
+00:00:53,000 --> 00:00:58,000
+The difficulty comes from thinking of the registers in the datapath as part of the state of our super-FSM.
+
+11
+00:00:58,000 --> 00:01:03,000
+That's why we think about the datapath as being separate from the control FSM.
+
+12
+00:01:03,000 --> 00:01:11,000
+So how do we generalize this approach so we can use one computer circuit to solve many different problems.
+
+13
+00:01:11,000 --> 00:01:17,000
+Well, most problems would probably require more storage for operands and results.
+
+14
+00:01:17,000 --> 00:01:20,000
+And a larger list of allowable operations would be handy.
+
+15
+00:01:20,000 --> 00:01:26,000
+This is actually a bit tricky: what's the minimum set of operations we can get away with?
+
+16
+00:01:26,000 --> 00:01:32,000
+As we'll see later, surprisingly simple hardware is sufficient to perform any realizable computation.
+
+17
+00:01:32,000 --> 00:01:46,000
+At the other extreme, many complex operations (e.g., fast fourier transform) are best implemented as sequences of simpler operations (e.g., add and multiply) rather than as a single massive combinational circuit.
+
+18
+00:01:46,000 --> 00:01:51,000
+These sorts of design tradeoffs are what makes computer architecture fun!
+
+19
+00:01:51,000 --> 00:02:01,000
+We'd then combine our larger storage with logic for our chosen set of operations into a general purpose datapath that could be reused to solve many different problems.
+
+20
+00:02:01,000 --> 00:02:03,000
+Let's see how that would work...
+
+21
+00:02:03,000 --> 00:02:08,000
+Here's a datapath with 4 data registers to hold results.
+
+22
+00:02:08,000 --> 00:02:19,000
+The ASEL and BSEL multiplexers allow any of the data registers to be selected as either operand for our repertoire of arithmetic and boolean operations.
+
+23
+00:02:19,000 --> 00:02:33,000
+The result is selected by the OPSEL MUX and can be written back into any of the data registers by setting the WEN control signal to 1 and using the 2-bit WSEL signal to select which data register will be loaded at the next rising clock edge.
+
+24
+00:02:33,000 --> 00:02:27,000
+Note that the data registers have a load-enable control input.
+
+25
+00:02:27,000 --> 00:02:46,000
+When this signal is 1, the register will load a new value from its D input, otherwise it ignores the D input and simply reloads its previous value.
+
+26
+00:02:46,000 --> 00:02:53,000
+And, of course, we'll add a control FSM to generate the appropriate sequence of control signals for the datapath.
+
+27
+00:02:53,000 --> 00:03:04,000
+The Z input from the datapath allows the system to perform data-dependent operations, where the sequence of operations can be influenced by the actual values in the data registers.
+
+28
+00:03:04,000 --> 00:03:15,000
+Here's the state transition diagram for the control FSM we'd use if we wanted to use this datapath to compute factorial assuming the initial contents of the data registers are as shown.
+
+29
+00:03:15,000 --> 00:03:23,000
+We need a few more states than in our initial implementation since this datapath can only perform one operation at each step.
+
+30
+00:03:23,000 --> 00:03:31,000
+So we need three steps for each iteration: one for the multiply, one for the decrement, and one for the test to see if we're done.
+
+31
+00:03:31,000 --> 00:03:41,000
+As seen here, it's often the case that general-purpose computer hardware will need more cycles and perhaps involve more hardware than an optimized single-purpose circuit.
+
+32
+00:03:41,000 --> 00:03:45,000
+You can solve many different problems with this system:
+
+33
+00:03:45,000 --> 00:03:54,000
+exponentiation, division, square root, and so on, so long as you don't need more than four data registers to hold input data, intermediate results, or the final answer.
+
+34
+00:03:54,000 --> 00:04:03,000
+By designing a control FSM, we are in effect "programming" our digital system, specifying the sequence of operations it will perform.
+
+35
+00:04:03,000 --> 00:04:07,000
+This is exactly how the early digital computers worked!
+
+36
+00:04:07,000 --> 00:04:13,000
+Here's a picture of the ENIAC computer built in 1943 at the University of Pennsylvania.
+
+37
+00:04:13,000 --> 00:04:23,000
+The Wikipedia article on the ENIAC tells us that "ENIAC could be programmed to perform complex sequences of operations, including loops, branches, and subroutines.
+
+38
+00:04:23,000 --> 00:04:29,000
+The task of taking a problem and mapping it onto the machine was complex, and usually took weeks.
+
+39
+00:04:29,000 --> 00:04:38,000
+After the program was figured out on paper, the process of getting the program into ENIAC by manipulating its switches and cables could take days.
+
+40
+00:04:38,000 --> 00:04:45,000
+This was followed by a period of verification and debugging, aided by the ability to execute the program step by step."
+
+41
+00:04:45,000 --> 00:04:50,000
+It's clear that we need a less cumbersome way to program our computer!
+

@@ -1,0 +1,124 @@
+0
+00:00:00,000 --> 00:00:03,000
+Finally, our last instruction!
+
+1
+00:00:03,000 --> 00:00:07,000
+Branches conditionally transfer control to a specific target instruction.
+
+2
+00:00:07,000 --> 00:00:18,000
+But we'll also need the ability to compute the address of the target instruction -- that ability is provided by the JMP instruction which simply sets the program counter to value from register "ra".
+
+3
+00:00:18,000 --> 00:00:24,000
+Like branches, JMP will write the PC+4 value into to the specified destination register.
+
+4
+00:00:24,000 --> 00:00:29,000
+This capability is very useful for implementing procedures in Beta code.
+
+5
+00:00:29,000 --> 00:00:37,000
+Suppose we have a procedure "sqrt" that computes the square root of its argument, which is passed in, say, R0.
+
+6
+00:00:37,000 --> 00:00:42,000
+We don't show the code for sqrt on the right, except for the last instruction, which is a JMP.
+
+7
+00:00:42,000 --> 00:00:49,000
+On the left we see that the programmer wants to call the sqrt procedure from two different places in his program.
+
+8
+00:00:49,000 --> 00:00:50,000
+Let's watch what happens...
+
+9
+00:00:50,000 --> 00:00:59,000
+The first call to the sqrt procedure is implemented by the unconditional branch at location 0x100 in main memory.
+
+10
+00:00:59,000 --> 00:01:04,000
+The branch target is the first instruction of the sqrt procedure, so execution continues there.
+
+11
+00:01:04,000 --> 00:01:13,000
+The BEQ also writes the address of the following instruction (0x104) into its destination register, R28.
+
+12
+00:01:13,000 --> 00:01:27,000
+When we reach the end of first procedure call, the JMP instruction loads the value in R28, which is 0x104, into the PC, so execution continues with the instruction following the first BEQ.
+
+13
+00:01:27,000 --> 00:01:34,000
+So we've managed to return from the procedure and continue execution where we left off in the main program.
+
+14
+00:01:34,000 --> 00:01:48,000
+When we get to the second call to the sqrt procedure, the sequence of events is the same as before except that this time R28 contains 0x67C, the address of the instruction following the second BEQ.
+
+15
+00:01:48,000 --> 00:02:00,000
+So the second time we reach the end of the sqrt procedure, the JMP sets the PC to 0x67C and execution resumes with the instruction following the second procedure call.
+
+16
+00:02:00,000 --> 00:02:01,000
+Neat!
+
+17
+00:02:01,000 --> 00:02:06,000
+The BEQs and JMP have worked together to implement procedure call and return.
+
+18
+00:02:06,000 --> 00:02:10,000
+We'll discuss the implementation of procedures in detail in an upcoming lecture.
+
+19
+00:02:10,000 --> 00:02:15,000
+That wraps up the design of the Beta instruction set architecture.
+
+20
+00:02:15,000 --> 00:02:21,000
+In summary, the Beta has 32 registers to hold values that can be used as operands for the ALU.
+
+21
+00:02:21,000 --> 00:02:27,000
+All other values, along with the binary representation of the program itself, are stored in main memory.
+
+22
+00:02:27,000 --> 00:02:36,000
+The Beta supports 32-bit memory addresses and can access values in 2^32 = 4 gigabytes of main memory.
+
+23
+00:02:36,000 --> 00:02:45,000
+All Beta memory access refer to 32-bit words, so all addresses will be a multiple of 4 since there are 4 bytes/word.
+
+24
+00:02:45,000 --> 00:02:48,000
+The are two instruction formats.
+
+25
+00:02:48,000 --> 00:02:53,000
+The first specifies an opcode, two source registers and a destination register.
+
+26
+00:02:53,000 --> 00:03:03,000
+The second replaces the second source register with a 32-bit constant, derived by sign-extending a 16-bit constant stored in the instruction itself.
+
+27
+00:03:03,000 --> 00:03:05,000
+There are three classes of instructions:
+
+28
+00:03:05,000 --> 00:03:13,000
+ALU operations, LD and ST for accessing main memory, and branches and JMPs that change the order of execution.
+
+29
+00:03:13,000 --> 00:03:14,000
+And that's it!
+
+30
+00:03:14,000 --> 00:03:24,000
+As we'll see in the next lecture, we'll be able parlay this relatively simple repertoire of operations into a system that can execute any computation we can specify.
+

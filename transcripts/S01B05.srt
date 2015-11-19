@@ -1,0 +1,212 @@
+0
+00:00:00,000 --> 00:00:04,000
+The Beta is an example of a reduced-instruction-set computer (RISC) architecture.
+
+1
+00:00:04,000 --> 00:00:13,000
+"Reduced" refers to the fact that in the Beta ISA, most instructions only access the internal registers for their operands and destination.
+
+2
+00:00:13,000 --> 00:00:22,000
+Memory values are loaded and stored using separate memory-access instructions, which implement only a simple address calculation.
+
+3
+00:00:22,000 --> 00:00:30,000
+These reductions lead to smaller, higher-performance hardware implementations and simpler compilers on the software side.
+
+4
+00:00:30,000 --> 00:00:34,000
+The ARM and MIPS ISAs are other examples of RISC architectures.
+
+5
+00:00:34,000 --> 00:00:38,000
+Intel's x86 ISA is more complex.
+
+6
+00:00:38,000 --> 00:00:46,000
+There is a limited amount of storage inside of the CPU -- using the language of sequential logic, we'll refer to this as the CPU state.
+
+7
+00:00:46,000 --> 00:00:55,000
+There's a 32-bit program counter (PC for short) that holds the address of the current instruction in main memory.
+
+8
+00:00:55,000 --> 00:00:59,000
+And there are thirty-two registers, numbered 0 through 31.
+
+9
+00:00:59,000 --> 00:01:02,000
+Each register holds a 32-bit value.
+
+10
+00:01:02,000 --> 00:01:10,000
+We'll use use 5-bit fields in the instruction to specify the number of the register to be used an operand or destination.
+
+11
+00:01:10,000 --> 00:01:23,000
+As shorthand, we'll refer to a register using the prefix "R" followed by its number, e.g., "R0" refers to the register selected by the 5-bit field 0b00000.
+
+12
+00:01:23,000 --> 00:01:33,000
+Register 31 (R31) is special -- its value always reads as 0 and writes to R31 have no affect on its value.
+
+13
+00:01:33,000 --> 00:01:42,000
+The number of bits in each register and hence the number of bits supported by ALU operations is a fundamental parameter of the ISA.
+
+14
+00:01:42,000 --> 00:01:45,000
+The Beta is a 32-bit architecture.
+
+15
+00:01:45,000 --> 00:01:53,000
+Many modern computers are 64-bit architectures, meaning they have 64-bit registers and a 64-bit datapath.
+
+16
+00:01:53,000 --> 00:01:56,000
+Main memory is an array of 32-bit words.
+
+17
+00:01:56,000 --> 00:01:59,000
+Each word contains four 8-bit bytes.
+
+18
+00:01:59,000 --> 00:02:08,000
+The bytes are numbered 0 through 3, with byte 0 corresponding to the low-order 7 bits of the 32-bit value, and so on.
+
+19
+00:02:08,000 --> 00:02:14,000
+The Beta ISA only supports word accesses, either loading or storing full 32-bit words.
+
+20
+00:02:14,000 --> 00:02:19,000
+Most "real" computers also support accesses to bytes and half-words.
+
+21
+00:02:19,000 --> 00:02:28,000
+Even though the Beta only accesses full words, following a convention used by many ISAs it uses byte addresses.
+
+22
+00:02:28,000 --> 00:02:35,000
+Since there are 4 bytes in each word, consecutive words in memory have addresses that differ by 4.
+
+23
+00:02:35,000 --> 00:02:41,000
+So the first word in memory has address 0, the second word address 4, and so on.
+
+24
+00:02:41,000 --> 00:02:46,000
+You can see the addresses to left of each memory location in the diagram shown here.
+
+25
+00:02:46,000 --> 00:02:56,000
+Note that we'll usually use hexadecimal notation when specifying addresses and other binary values -- the "0x" prefix indicates when a number is in hex.
+
+26
+00:02:56,000 --> 00:03:03,000
+When drawing a memory diagram, we'll follow the convention that addresses increase as you read from top to bottom.
+
+27
+00:03:03,000 --> 00:03:11,000
+The Beta ISA supports 32-bit byte addressing, so an address fits exactly into one 32-bit register or memory location.
+
+28
+00:03:11,000 --> 00:03:21,000
+The maximum memory size is 2^32 bytes or 2^30 words -- that's 4 gigabytes (4 GB) or one billion words of main memory.
+
+29
+00:03:21,000 --> 00:03:02,000
+Some Beta implementations might actually have a smaller main memory, i.e., one with fewer than 1 billion locations.
+
+30
+00:03:02,000 --> 00:03:32,000
+Why have separate registers and main memory?
+
+31
+00:03:32,000 --> 00:03:39,000
+Well, modern programs and datasets are very large, so we'll want to have a large main memory to hold everything.
+
+32
+00:03:39,000 --> 00:03:51,000
+But large memories are slow and usually only support access to one location at a time, so they don't make good storage for use in each instruction which needs to access several operands and store a result.
+
+33
+00:03:51,000 --> 00:04:04,000
+If we used only one large storage array, then an instruction would need to have three 32-bit addresses to specify the two source operands and destination -- each instruction encoding would be huge!
+
+34
+00:04:04,000 --> 00:04:12,000
+And the required memory accesses would have to be one-after-the-other, really slowing down instruction execution.
+
+35
+00:04:12,000 --> 00:04:22,000
+On the other hand, if we use registers to hold the operands and serve as the destination, we can design the register hardware for parallel access and make it very fast.
+
+36
+00:04:22,000 --> 00:04:32,000
+To keep the speed up we won't be able to have very many registers -- a classic size-vs-speed performance tradeoff we see in digital systems all the time.
+
+37
+00:04:32,000 --> 00:04:43,000
+In the end, the tradeoff leading to the best performance is to have a small number of very fast registers used by most instructions and a large but slow main memory.
+
+38
+00:04:43,000 --> 00:04:45,000
+So that's what the BETA ISA does.
+
+39
+00:04:45,000 --> 00:04:50,000
+In general, all program data will reside in main memory.
+
+40
+00:04:50,000 --> 00:04:58,000
+Each variable used by the program "lives" in a specific main memory location and so has a specific memory address.
+
+41
+00:04:58,000 --> 00:05:11,000
+For example, in the diagram below, the value of variable "x" is stored in memory location 0x1008, and the value of "y" is stored in memory location 0x100C, and so on.
+
+42
+00:05:11,000 --> 00:05:23,000
+To perform a computation, e.g., to compute x*37 and store the result in y, we would have to first load the value of x into a register, say, R0.
+
+43
+00:05:23,000 --> 00:05:30,000
+Then we would have the datapath multiply the value in R0 by 37, storing the result back into R0.
+
+44
+00:05:30,000 --> 00:05:37,000
+Here we've assumed that the constant 37 is somehow available to the datapath and doesn't itself need to be loaded from memory.
+
+45
+00:05:37,000 --> 00:05:44,000
+Finally, we would write the updated value in R0 back into memory at the location for y.
+
+46
+00:05:44,000 --> 00:05:46,000
+Whew!  A lot of steps...
+
+47
+00:05:46,000 --> 00:05:53,000
+Of course, we could avoid all the loading and storing if we chose to keep the values for x and y in registers.
+
+48
+00:05:53,000 --> 00:06:01,000
+Since there are only 32 registers, we can't do this for all of our variables, but maybe we could arrange to load x and y into registers,
+
+49
+00:06:01,000 --> 00:06:12,000
+do all the required computations involving x and y by referring to those registers, and then, when we're done, store changes to x and y back into memory for later use.
+
+50
+00:06:12,000 --> 00:06:20,000
+Optimizing performance by keeping often-used values in registers is a favorite trick of programmers and compiler writers.
+
+51
+00:06:20,000 --> 00:06:30,000
+So the basic program template is some loads to bring values into the registers, followed by computation, followed by any necessary stores.
+
+52
+00:06:30,000 --> 00:06:36,000
+ISAs that use this template are usually referred to as "load-store architectures".
+

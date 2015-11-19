@@ -1,0 +1,31 @@
+* Transcript search for 6.004.2x
+** Features
+- Allow users to search the transcripts.
+- Updates result on the fly.
+- Supply URLs back to the edx platform.
+- Supply transcript snippets.
+- Specify lecture or worked example by #LEC or #WE
+
+** Considerations
+- Don't need to optimize this, the data set is small.  linear search
+  should work fine!
+
+- Should run completely in javascript
+
+- python will rummage around and emit a json blob that can be embedded
+  in a single html file for people to run locally if they want, or
+  access directly from github
+
+- simple UI
+
+** UI
+- A form field with update-as-you-type search results.
+
+*** generate large web page 
+- generate large html with embedded json blob. 
+
+*** investigate meteor-js
+really nice but seems to require a server
+
+
+

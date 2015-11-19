@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>6.004.2x transcript search</title>
+  </head>
+  <body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"
+            type="text/javascript"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.25/angular.min.js"
+            type="text/javascript"></script>
+    <script src="./js/transcripts.js" type="text/javascript"></script> 
+    <script src="./js/display.js" type="text/javascript"></script>
+    <form>
+      <h2> Search 6.004.2x transcripts </h2>
+
+      <div ng-app="app" ng-controller="myCtrl">
+        Search: <input type="text" ng-model="terms"><br> 
+      <br>
+      Found this many: {{search()}}
+      </div>
+      <hr>        
+      <div id="results">
+      </div>
+    </form>
+  </body>  
+</html>

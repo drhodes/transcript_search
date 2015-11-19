@@ -20,12 +20,3 @@
 
 ** UI
 - A form field with update-as-you-type search results.
-
-*** generate large web page 
-- generate large html with embedded json blob. 
-
-*** investigate meteor-js
-really nice but seems to require a server
-
-
-

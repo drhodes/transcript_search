@@ -1,0 +1,324 @@
+0
+00:00:00,000 --> 00:00:16,000
+For this problem, we are going to make use of this simple datapath that consists of a four register register file, a relatively simple arithmetic logic unit that can perform ADD, SUB, MUL, and NAND operations.
+
+1
+00:00:16,000 --> 00:00:21,000
+In addition, it can compare two inputs and determine whether or not they are equal.
+
+2
+00:00:21,000 --> 00:00:26,000
+The result of the comparison, Z, can then be used to control what happens next.
+
+3
+00:00:26,000 --> 00:00:30,000
+There are multiple control signals in this datapath.
+
+4
+00:00:30,000 --> 00:00:33,000
+The first two are Asel and Bsel.
+
+5
+00:00:33,000 --> 00:00:38,000
+These are used to select which register drives the corresponding multiplexer output.
+
+6
+00:00:38,000 --> 00:00:49,000
+The value stored in the register selected by Asel becomes the A input to the arithmetic operations and is passed to the arithmetic units along the red wire.
+
+7
+00:00:49,000 --> 00:00:59,000
+The value stored in the register selected by Bsel becomes the B input to the arithmetic operations and is passed to the arithmetic units along the blue wire.
+
+8
+00:00:59,000 --> 00:01:02,000
+The next control signal is Opsel.
+
+9
+00:01:02,000 --> 00:01:11,000
+It selects which of the four operation outputs should be selected by the Opsel multiplexer as the result of our operation.
+
+10
+00:01:11,000 --> 00:01:15,000
+This result is fed back to the register file along the purple wire.
+
+11
+00:01:15,000 --> 00:01:27,000
+The Wen is a write enable for the register file which specifies whether or not the result of our operation should be written back into the register file.
+
+12
+00:01:27,000 --> 00:01:37,000
+If it is supposed to be written back to the register file, then the Wsel control signal selects to which of the registers the result should be written.
+
+13
+00:01:37,000 --> 00:01:40,000
+The yellow box is the control FSM.
+
+14
+00:01:40,000 --> 00:01:47,000
+It generates the control signals for the rest of the datapath based on the operations that you want to perform.
+
+15
+00:01:47,000 --> 00:01:52,000
+Suppose the initial value of our 4 registers is:
+
+16
+00:01:52,000 --> 00:01:59,000
+R0 = 1, R1 = 0, R2 = -1, and R3 = N.
+
+17
+00:01:59,000 --> 00:02:07,000
+We want to evaluate the result of the function 3 * N -- 2 and store the result into R3.
+
+18
+00:02:07,000 --> 00:02:15,000
+Our job is to design the control FSM so that it produces the correct signals to achieve what we want.
+
+19
+00:02:15,000 --> 00:02:22,000
+To help us get started, here is an incomplete listing of the code that will achieve what we want.
+
+20
+00:02:22,000 --> 00:02:27,000
+The Sx labels are the names of the states corresponding to each instruction in our program.
+
+21
+00:02:27,000 --> 00:02:35,000
+Our first job is to figure out the values of RX, RY, and RZ so that our code behaves as expected.
+
+22
+00:02:35,000 --> 00:02:38,000
+Let's begin by looking at state S0.
+
+23
+00:02:38,000 --> 00:02:48,000
+We want to end up with the value -2 in R2 by adding R2 which currently holds -1 to some register.
+
+24
+00:02:48,000 --> 00:02:55,000
+In order to produce -2, we need to add -1 which means that RX = R2.
+
+25
+00:02:55,000 --> 00:03:00,000
+Next, we look at state S1.
+
+26
+00:03:00,000 --> 00:03:08,000
+Here we want to end up with the value 2 in R1 by adding Ry to R0 which currently holds a 1.
+
+27
+00:03:08,000 --> 00:03:14,000
+In order to produce 2, we need to add 1 which means RY = R0.
+
+28
+00:03:14,000 --> 00:03:22,000
+State S2 adds R0 to R1 and stores the result in R1.
+
+29
+00:03:22,000 --> 00:03:28,000
+Since R0 still equals 1 and R1 = 2, then we produce R1 = 3.
+
+30
+00:03:28,000 --> 00:03:31,000
+Now, let's look at state S3.
+
+31
+00:03:31,000 --> 00:03:37,000
+Our goal is to multiply 3*N and store the result into R3.
+
+32
+00:03:37,000 --> 00:03:43,000
+To achieve this, we multiply RZ by R3 and store the result in R3.
+
+33
+00:03:43,000 --> 00:03:50,000
+Since R3 currently = N, that means that we want to multiply it by R1 which equals 3.
+
+34
+00:03:50,000 --> 00:03:53,000
+So RZ = R1.
+
+35
+00:03:53,000 --> 00:04:02,000
+Finally, we add R3 and R2 to produce 3*N-2 and store that result back into R3.
+
+36
+00:04:02,000 --> 00:04:08,000
+S5 just executes a HALT() instruction to indicate that we are done.
+
+37
+00:04:08,000 --> 00:04:18,000
+Now that we have working code, our next goal is to determine the settings for the control FSM that will make the correct operations be executed by our datapath.
+
+38
+00:04:18,000 --> 00:04:25,000
+Since we have 6 states, we will need 3 state bits to encode the value of the current and next state.
+
+39
+00:04:25,000 --> 00:04:28,000
+We begin with state S0.
+
+40
+00:04:28,000 --> 00:04:40,000
+In order to encode that we are in state zero using 3 bits, we set our current state, S[2:0] to 000.
+
+41
+00:04:40,000 --> 00:04:47,000
+In this operation we don't care about the Z signal, so Z = X which means don't care.
+
+42
+00:04:47,000 --> 00:04:54,000
+The instruction that we want to execute after this first ADD, is the next ADD in state S1.
+
+43
+00:04:54,000 --> 00:04:58,000
+This means that our next state is 001.
+
+44
+00:04:58,000 --> 00:05:03,000
+Note that the notation S' is often used to represent the next state.
+
+45
+00:05:03,000 --> 00:05:09,000
+Our register select signals each need to select one of 4 registers.
+
+46
+00:05:09,000 --> 00:05:14,000
+This means that these signals must each be 2 bits wide.
+
+47
+00:05:14,000 --> 00:05:19,000
+Our Asel control signal identifies the register that should be used as input A.
+
+48
+00:05:19,000 --> 00:05:24,000
+This register is R2, so Asel is 10.
+
+49
+00:05:24,000 --> 00:05:28,000
+Bsel identifies the second source operand.
+
+50
+00:05:28,000 --> 00:05:35,000
+In this case it is also R2, so Bsel = 10 as well.
+
+51
+00:05:35,000 --> 00:05:40,000
+The Opsel signal identifies which operation we want to perform.
+
+52
+00:05:40,000 --> 00:05:50,000
+Since we have 4 distinct operations, we would need two bits to distinguish amongst them and we would make each operation be associated with one of the 4 encodings.
+
+53
+00:05:50,000 --> 00:05:57,000
+For simplicity, let's just label Opsel as ADD to indicate that we selected the encoding for the ADD.
+
+54
+00:05:57,000 --> 00:06:06,000
+The register we want to write our result to, also known as the destination register, is R2 for this operation.
+
+55
+00:06:06,000 --> 00:06:13,000
+This means that Wsel = 10 and Wen = 1.
+
+56
+00:06:13,000 --> 00:06:17,000
+Wen is a signal that enables writing to the register file.
+
+57
+00:06:17,000 --> 00:06:25,000
+If it is set to 0, then regardless of the value of Wsel, no value will be written into the register file.
+
+58
+00:06:25,000 --> 00:06:29,000
+Now let's quickly run through the rest of our instructions.
+
+59
+00:06:29,000 --> 00:06:34,000
+Our current state is state S1, or 001.
+
+60
+00:06:34,000 --> 00:06:36,000
+Once again Z is a don't care.
+
+61
+00:06:36,000 --> 00:06:43,000
+Since the instruction that will be executed next is the one in S2, our next state is 010.
+
+62
+00:06:43,000 --> 00:06:49,000
+Our Asel = 00 and Bsel = 00.
+
+63
+00:06:49,000 --> 00:06:56,000
+Opsel = ADD and Wsel = 01 and Wen = 1.
+
+64
+00:06:56,000 --> 00:07:05,000
+State 2 follows the same model, so current state is 010 and next state is 011.
+
+65
+00:07:05,000 --> 00:07:15,000
+Here Asel = 00, Bsel = 01 and Wsel = 01 and Wen = 1.
+
+66
+00:07:15,000 --> 00:07:18,000
+Once again our Opsel is an ADD.
+
+67
+00:07:18,000 --> 00:07:26,000
+We move on to state 3 whose current state is 011 and next state is 100.
+
+68
+00:07:26,000 --> 00:07:36,000
+Asel = 01, Bsel = 11, Wsel = 11, and Wen = 1.
+
+69
+00:07:36,000 --> 00:07:44,000
+Here our Opsel is MUL to indicate that the operation to be executed here is a multiply.
+
+70
+00:07:44,000 --> 00:07:51,000
+For state four, we have current state set to 100 and next state to 101.
+
+71
+00:07:51,000 --> 00:08:00,000
+Asel = 11, Bsel = 10, Wsel = 11, and Wen = 1.
+
+72
+00:08:00,000 --> 00:08:03,000
+Our Opsel is once again ADD.
+
+73
+00:08:03,000 --> 00:08:06,000
+Finally, we reach state 5.
+
+74
+00:08:06,000 --> 00:08:11,000
+This state looks a little different from the previous states so lets examine it a little more closely.
+
+75
+00:08:11,000 --> 00:08:22,000
+The first thing to note, is that when we get to state 5 we want to stay there because we are done with our execution, so both the current state and the next state are 101.
+
+76
+00:08:22,000 --> 00:08:32,000
+Most of the other control bits can be set to don't care because at this point we mostly don't care about what the rest of the datapath is doing.
+
+77
+00:08:32,000 --> 00:08:36,000
+The only other signal that we do need to worry about is Wen.
+
+78
+00:08:36,000 --> 00:08:47,000
+Since we are allowing the rest of our datapath to run in whatever way, we need to ensure that nothing produced on the datapath at this stage gets written back to any of the registers.
+
+79
+00:08:47,000 --> 00:08:52,000
+In order to guarantee that, we set Wen = 0.
+
+80
+00:08:52,000 --> 00:09:02,000
+Here is the complete control ROM that will execute the function 3*N-2 and store its result into R3.
+

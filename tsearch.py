@@ -99,13 +99,17 @@ def generate_json(srt_path):
     for srt_filename in get_srt_filenames(srt_path):
         basename = os.path.split(srt_filename)[-1]
         url = generate_url(basename)
+        
         # each item in srt file is a 
         items = pysrt.open(srt_filename)
         subitems = []
         for item in items:            
             subitems.append({'start': str(item.start).split(",")[0],
                              'end': str(item.end).split(",")[0],
-                             'text': item.text, })            
+                             'text': item.text,
+                             'is_lecture': "LEC" in basename,
+                             'is_worked_example': "WE" in basename,
+                         })            
         item_table = {
             'url': url,
             'items': subitems,

@@ -3,15 +3,40 @@
 var nil = null;
 
 
-// Terms -> [(url, items that contain terms)]
+
+function hasDirectiveWE(terms) {
+    return $.inArray("#we");
+}
+
+function hasDirectiveLEC(terms) {
+    return $.inArray("#lec");
+}
+
+function removeDirectives(terms) {
+    terms = jQuery.grep(terms, function(value) {
+        return value != "#we" || value != "#lec";
+    });
+    return terms;
+}
+
+// Terms -> [items that contain terms]
 function searchForTerm(lecId, term) {
+    if (term == nil) {
+        return [];
+    }
+    // slow linear search is good enough for now.    
     var lec = JSON_transcripts[lecId];
     var items = lec.items;
-    if (term != nil) {
-        term = term.toLowerCase();
-    }
+    term = term.toLowerCase();
+    terms = term.split(" ");
 
+    var workedExamplesOnly = hasDirectiveWE(terms);
+    var lecturesOnly = hasDirectiveLEC(terms);
+    terms = removeDirectives(terms);
+    
     var results = [];
+
+    // first pass matches on a single term.
     items.forEach(function(item) {
         txt = item.text.toLowerCase();
         // if term is in the txt
@@ -19,19 +44,17 @@ function searchForTerm(lecId, term) {
             results.push(item);
         }
     });
+
+    // remaining passes remove matches.
+    
     return results;
 }
 
 function generateDiv(url, item) {
-    // {
-    //     "start":"00:00:00",
-    //     "end":"00:00:06",
-    //     "text":"Finally, let's ...  program counter.",
-    // }
     var results = $("#results");
     
     results.append("<hr>");
-    results.append("<div>" + item.text + "</div>");
+    results.append("<p>" + item.text + "</p>");
     results.append("<span><a href='" + url + "'>lecture</a><span>");   
     results.append(" from time: ");
     results.append(item.start); 

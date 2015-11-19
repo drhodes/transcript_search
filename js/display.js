@@ -87,12 +87,13 @@ function clearResultsDiv() {
     $("#results").empty();
 }
 
-function hey(terms) {
+function refreshResults(terms) {
     clearResultsDiv();
-    //return ss + " Hey!";
+    
     var lectures = Object.keys(JSON_transcripts);
     var numFound = 0;
     var accum = [];
+    
     lectures.forEach(function(lecId){
         var lecture = JSON_transcripts[lecId];
         var results = searchForTerms(lecId, terms);
@@ -110,10 +111,8 @@ function hey(terms) {
 
 var app = angular.module('app', []);
 app.controller('myCtrl', function($scope) {
-    // $scope.firstName = "John";
-    // $scope.lastName = "Doe";
     $scope.search = function() {
-        return hey($scope.terms);
+        return refreshResults($scope.terms);
     };
     
 });

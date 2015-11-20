@@ -13,15 +13,13 @@ something, then clone, hack and pull request. I'll most likely merge it.
 
 ** Considerations
 - Don't need to optimize this, the data set is small.  linear search
-  should work fine! If it slows down later, then maybe there is a js
-  version of sqlite that could access local storage, or maybe index
-  with a bloom filter.
+  should work fine! If it slows down later, then add a reasonable index
 
 - Should run completely in javascript
 
 - python will rummage around and emit a json blob that can be embedded
   in a single html file for people to run locally if they want, or
-  access directly from github
+  access directly from github.
 
 - simple UI
 

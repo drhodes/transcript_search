@@ -40,16 +40,16 @@ function searchForTerms(lecId, searchTerms) {
         txt = item.text.toLowerCase();
         // iterate over terms
 
-        var foundTerm = true;
+        var allTermsMatch = true;
         terms.forEach(function(term) {
             if (txt.indexOf(term) == -1) {
                 // couldn't find this term in the item text
-                foundTerm = false;
+                allTermsMatch = false;
                 return;
             } 
         });
 
-        if (foundTerm) {
+        if (allTermsMatch) {
             if (workedExamplesOnly && item.is_worked_example) {
                 results.push(item);
             }
@@ -61,7 +61,6 @@ function searchForTerms(lecId, searchTerms) {
             }
         }            
     });
-    // remaining passes remove matches.
     
     return results;
 }

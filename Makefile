@@ -24,6 +24,9 @@ add:
 commit:
 	git commit -a
 
+work:
+	emacs -nw tsearch.html tsearch.py Makefile battle-plan.org ./js/display.js 
+
 clean: 
 	-trash *~ 2> /dev/null || true
 	-trash ./js/*~ 2> /dev/null || true

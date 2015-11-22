@@ -65,21 +65,29 @@ function searchForTerms(lecId, searchTerms) {
     return results;
 }
 
-function generateDiv(url, item) {
-    var results = $("#results");
+function generateDiv(url, item) { // -> string
+    var resultStr = "";
     
-    results.append("<hr>");
-    results.append("<p>" + item.text + "</p>");
+    resultStr += "<hr>";
+    resultStr += "<p>" + item.text + "</p>";
 
     if (item.is_worked_example) {
-        results.append("<span>worked example <a href='" + url + "'>lecture</a><span>");
+        resultStr += "<span>worked example <a href='" + url + "'>lecture</a><span>";
     } else { 
-        results.append("<span><a href='" + url + "'>lecture</a><span>");
+        resultStr += "<span><a href='" + url + "'>lecture</a><span>";
     }
-    results.append(" from time: ");
-    results.append(item.start); 
-    results.append(" to: ");
-    results.append(item.end);
+    resultStr += " from time: ";
+    resultStr += item.start; 
+    resultStr += " to ";
+    resultStr += item.end;
+    return resultStr;
+}
+
+function insertResults(resultStrings) { // [string] -> DOM ()
+    // concat the results
+    var catted = resultStrings.join("");
+    var results = $("#results");
+    results.append(catted);
 }
 
 function clearResultsDiv() {
@@ -88,24 +96,32 @@ function clearResultsDiv() {
 
 function refreshResults(terms) {
     clearResultsDiv();
-    
     var lectures = Object.keys(JSON_transcripts);
     var numFound = 0;
+    const limit = 25;
     var accum = [];
     
     lectures.forEach(function(lecId){
+        if (accum.length >= limit) {                    
+            return;
+        }
+        
         var lecture = JSON_transcripts[lecId];
         var results = searchForTerms(lecId, terms);
         if (results.length!=0) {
-            accum.push(results);
             numFound += results.length;
             results.forEach(function(item){
-                generateDiv(lecture.url, item);
-            });
-            
+                accum.push(generateDiv(lecture.url, item));
+            });            
         }
     });
-    return numFound;
+    
+    insertResults(accum);
+
+    if (accum.length > limit) {
+        return "more than " + numFound;
+    }
+    return "exactly " + numFound;
 }
 
 var app = angular.module('app', []);

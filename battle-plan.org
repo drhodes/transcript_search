@@ -4,12 +4,24 @@ Until edx gets a search feature for transcripts, this should suffice.
 It's not pretty, but it works without any backend. If you want to add
 something, then clone, hack and pull request. I'll most likely merge it.
 
+
+
 ** Features
 - Allow users to search the transcripts.
 - Updates result on the fly.
 - Supply URLs back to the edx platform.
 - Supply transcript snippets.
 - Specify lecture or worked example by #LEC or #WE
+
+*** TODO
+- Automate .srt file scraping and link generation 
+  
+- don't add results one by one, add them in one big chunk, those Dom
+  manipulation seem slow.  (how to measure this?)
+
+
+  
+
 
 ** Considerations
 - Don't need to optimize this, the data set is small.  linear search

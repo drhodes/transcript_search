@@ -3,10 +3,52 @@
 var nil = null;
 
 
+
 function SearchModule() {
+    
     // everything in this function is private except the last
     // function, which is returned as an interface to the search
     // functionality
+   
+    // ------------------------------------------------------------------
+    // Set aside a place for loading the transcript into
+    var JSON_transcripts = {};
+    var url = "https://drhodes.github.io/transcript_search/js/json-transcripts/6.004.2x.json";
+    $.getJSON(url, function(json) {
+        JSON_transcripts = json;
+        console.log( "JSON Data: " + json );
+    });
+    
+    // function loadJsonTranscripts(courseName) {
+    //     // $.getJSON("./js/json-transcripts/6.004.2x.json", function(json) {
+    //     //     console.log(json); // this will show the info it in firebug console
+    //     // });
+        
+    //     $.ajax({
+    //         //'async': false,
+    //         'global': false,
+    //         'url': "./js/json-transcripts/6.004.2x.json",
+    //         'dataType': "text",
+    //         'success': function (data) {
+    //             JSON_transcripts = $.parseJSON(data);
+    //         }
+    //     });
+    // }
+    // loadJsonTranscripts();
+    
+    // going to need this soon
+    // https://stackoverflow.com/questions/8486099
+    // thanks @ Jan Turoň
+    // function getJsonFromUrl() {
+    //     var query = location.search.substr(1);
+    //     var result = {};
+    //     query.split("&").forEach(function(part) {
+    //         var item = part.split("=");
+    //         result[item[0]] = decodeURIComponent(item[1]);
+    //     });
+    //     return result;
+    // }
+
     
     function hasDirectiveWE(terms) {
         return $.inArray("#we", terms) != -1;
@@ -106,7 +148,6 @@ function SearchModule() {
     function refreshResults(terms, course) {
         // As of now, this course variable is ignored.  Soon it will
         // be used to select the appropriate JSON_transcripts.
-        
         clearResultsDiv();
         var lectures = Object.keys(JSON_transcripts);
         var numFound = 0;
@@ -133,6 +174,7 @@ function SearchModule() {
         if (accum.length > limit) {
             return "more than " + numFound;
         }
+
         return "exactly " + numFound;
     }
 
@@ -140,23 +182,9 @@ function SearchModule() {
 }
 
 
-// https://stackoverflow.com/questions/8486099
-// thanks @ Jan Turoň
-function getJsonFromUrl() {
-    var query = location.search.substr(1);
-    var result = {};
-    query.split("&").forEach(function(part) {
-        var item = part.split("=");
-        result[item[0]] = decodeURIComponent(item[1]);
-    });
-    return result;
-}
-
-
 var app = angular.module('app', []);
 app.controller('myCtrl', function($scope) {
     var course = "6.004.2x";
-
     // Eventually uncomment this code and use the params to 
     // var params = getJsonFromUrl();
     // if (params.course != "6.004.2x") {

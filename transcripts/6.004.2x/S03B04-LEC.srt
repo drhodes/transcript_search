@@ -1,0 +1,228 @@
+0
+00:00:00,000 --> 00:00:04,000
+Let's take a closer look at how macros work in UASM.
+
+1
+00:00:04,000 --> 00:00:11,000
+Here we see the definition of the macro "consec" which has a single parameter "n".
+
+2
+00:00:11,000 --> 00:00:14,000
+The body of the macro is a sequence of four expressions.
+
+3
+00:00:14,000 --> 00:00:26,000
+When there's an invocation of the "consec" macro, in this example with the argument 37, the body of the macro is expanded replacing all occurrences of "n" with the argument 37.
+
+4
+00:00:26,000 --> 00:00:32,000
+The resulting text is then processed as if it had appeared in place of the macro invocation.
+
+5
+00:00:32,000 --> 00:00:41,000
+In this example, the four expressions are evaluated to give a sequence of four values that will be placed in the next four bytes of the output array.
+
+6
+00:00:41,000 --> 00:00:51,000
+Macro expansions may contain other macro invocations, which themselves will be expanded, continuing until all that's left are expressions to be evaluated.
+
+7
+00:00:51,000 --> 00:00:58,000
+Here we see the macro definition for WORD, which assembles its argument into two consecutive bytes.
+
+8
+00:00:58,000 --> 00:01:10,000
+And for the macro LONG, which assembles its argument into four consecutive bytes, using the WORD macro to process the low 16 bits of the value, then the high 16 bits of the value.
+
+9
+00:01:10,000 --> 00:01:21,000
+These two UASM statements cause the constant 0xDEADBEEF to converted to 4 bytes, which are then deposited in the output array starting at index 0x100.
+
+10
+00:01:21,000 --> 00:01:29,000
+Note that the Beta expects the least-significant byte of a multi-byte value to be stored at the lowest byte address.
+
+11
+00:01:29,000 --> 00:01:40,000
+So the least-significant byte 0xEF is placed at address 0x100 and the most-significant byte 0xDE is placed at address 0x103.
+
+12
+00:01:40,000 --> 00:01:46,000
+This is the "little-endian" convention for multi-byte values: the least-significant byte comes first.
+
+13
+00:01:46,000 --> 00:01:50,000
+Intel's x86 architecture is also little-endian.
+
+14
+00:01:50,000 --> 00:01:56,000
+There is a symmetrical "big-endian" convention where the most-significant byte comes first.
+
+15
+00:01:56,000 --> 00:02:04,000
+Both conventions are in active use and, in fact, some ISAs can be configured to use either convention!
+
+16
+00:02:04,000 --> 00:02:23,000
+There is no right answer for which convention to use, but the fact that there two conventions means that we have to be alert for the need to convert the representation of multi-byte values when moving values between one ISA and another, e.g., when we send a data file to another user.
+
+17
+00:02:23,000 --> 00:02:30,000
+As you can imagine there are strong advocates for both schemes who are happy to defend their point of view at great length.
+
+18
+00:02:30,000 --> 00:02:46,000
+Given the heat of the discussion, it's appropriate that the names for the conventions were drawn from Jonathan Swift's "Gulliver's Travels" in which a civil war is fought over whether to open a soft-boiled egg at its big end or its little end.
+
+19
+00:02:46,000 --> 00:02:50,000
+Let's look at the macros used to assemble Beta instructions.
+
+20
+00:02:50,000 --> 00:03:02,000
+The BETAOP helper macro supports the 3-register instruction format, taking as arguments the values to be placed in the OPCODE, Ra, Rb, and Rc fields.
+
+21
+00:03:02,000 --> 00:03:16,000
+The ".align 4" directive is a bit of administrative bookkeeping to ensure that instructions will have a byte address that's a multiple of 4, i.e., that they span exactly one 32-bit word in memory.
+
+22
+00:03:16,000 --> 00:03:25,000
+That's followed by an invocation of the LONG macro to generate the 4 bytes of binary data representing the value of the expression shown here.
+
+23
+00:03:25,000 --> 00:03:30,000
+The expression is where the actual assembly of the fields takes place.
+
+24
+00:03:30,000 --> 00:03:39,000
+Each field is limited to requisite number of bits using the modulo operator (%), then shifted left (<<) to the correct position in the 32-bit word.
+
+25
+00:03:39,000 --> 00:03:46,000
+And here are the helper macros for the instructions that use a 16-bit constant as the second operand.
+
+26
+00:03:46,000 --> 00:03:52,000
+Let's follow the assembly of an ADDC instruction to see how this works.
+
+27
+00:03:52,000 --> 00:04:03,000
+The ADDC macro expands into an invocation of the BETAOPC helper macro, passing along the correct value for the ADDC opcode, along with the three operands.
+
+28
+00:04:03,000 --> 00:04:07,000
+The BETAOPC macro does the following arithmetic:
+
+29
+00:04:07,000 --> 00:04:15,000
+the OP argument, in this case the value 0x30, is shifted left to occupy the high-order 6 bits of the instruction.
+
+30
+00:04:15,000 --> 00:04:21,000
+Then the RA argument, in this case 15, is placed in its proper location.
+
+31
+00:04:21,000 --> 00:04:29,000
+The 16-bit constant -32768 is positioned in the low 16 bits of the instruction.
+
+32
+00:04:29,000 --> 00:04:36,000
+And, finally, the Rc argument, in this case 0, is positioned in the Rc field of the instruction.
+
+33
+00:04:36,000 --> 00:04:14,000
+You can see why we call this processing "assembling an instruction".
+
+34
+00:04:14,000 --> 00:04:48,000
+The binary representation of an instruction is assembled from the binary values for each of the instruction fields.
+
+35
+00:04:48,000 --> 00:04:56,000
+It's not a complicated process, but it requires a lot of shifting and masking, tasks that we're happy to let a computer handle.
+
+36
+00:04:56,000 --> 00:05:07,000
+Here's the entire sequence of macro expansions that assemble this ADDC instruction into an appropriate 32-bit binary value in main memory.
+
+37
+00:05:07,000 --> 00:05:15,000
+You can see that the knowledge of Beta instruction formats and opcode values is built into the bodies of the macro definitions.
+
+38
+00:05:15,000 --> 00:05:18,000
+The UASM processing is actually quite general.
+
+39
+00:05:18,000 --> 00:05:25,000
+With a different set of macro definitions it could process assembly language programs for almost any ISA!
+
+40
+00:05:25,000 --> 00:05:36,000
+All the macro definitions for the Beta ISA are provided in the beta.uasm file, which is included in each of the assembly language lab assignments.
+
+41
+00:05:36,000 --> 00:05:44,000
+Note that we include some convenience macros to define shorthand representations that provide common default values for certain operands.
+
+42
+00:05:44,000 --> 00:05:53,000
+For example, except for procedure calls, we don't care about the PC+4 value saved in the destination register by branch instructions,
+
+43
+00:05:53,000 --> 00:06:03,000
+so almost always would specify R31 as the Rc register, effectively discarding the PC+4 value saved by branches.
+
+44
+00:06:03,000 --> 00:06:10,000
+So we define two-argument branch macros that automatically provide R31 as the destination register.
+
+45
+00:06:10,000 --> 00:06:17,000
+Saves some typing, and, more importantly, it makes it easier to understand the assembly language program.
+
+46
+00:06:17,000 --> 00:06:22,000
+Here are a whole set of convenience macros intended to make programs more readable.
+
+47
+00:06:22,000 --> 00:06:31,000
+For example, unconditional branches can be written using the BR() macro rather than the more cumbersome BEQ(R31,...).
+
+48
+00:06:31,000 --> 00:06:38,000
+And it's more readable to use branch-false (BF) and branch-true (BT) macros when testing the results of a compare instruction.
+
+49
+00:06:38,000 --> 00:06:43,000
+And note the PUSH and POP macros at the bottom of page.
+
+50
+00:06:43,000 --> 00:06:52,000
+These expand into multi-instruction sequences, in this case to add and remove values from a stack data structure pointed to by the SP register.
+
+51
+00:06:52,000 --> 00:07:00,000
+We call these macros "pseudo instructions" since they let us provide the programmer with what appears a larger instruction set,
+
+52
+00:07:00,000 --> 00:07:07,000
+although underneath the covers we've just using the same small instruction repertoire developed in Lecture 9.
+
+53
+00:07:07,000 --> 00:07:15,000
+In this example we've rewritten the original code we had for the factorial computation using pseudo instructions.
+
+54
+00:07:15,000 --> 00:07:21,000
+For example, CMOVE is a pseudo instruction for moving small constants into a register.
+
+55
+00:07:21,000 --> 00:07:32,000
+It's easier for us to read and understand the intent of a "constant move" operation than an "add a value to 0" operation provided by the ADDC expansion of CMOVE.
+
+56
+00:07:32,000 --> 00:07:39,000
+Anything we can do to remove the cognitive clutter will be very beneficial in the long run.
+

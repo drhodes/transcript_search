@@ -1,0 +1,196 @@
+0
+00:00:00,000 --> 00:00:10,000
+There are many other models of computation, each of which describes a class of integer functions where a computation is performed on an integer input to produce an integer answer.
+
+1
+00:00:10,000 --> 00:00:18,000
+Kleene, Post and Turing were all students of Alonzo Church at Princeton University in the mid-1930's.
+
+2
+00:00:18,000 --> 00:00:22,000
+They explored many other formulations for modeling computation:
+
+3
+00:00:22,000 --> 00:00:27,000
+recursive functions, rule-based systems for string rewriting, and the lambda calculus.
+
+4
+00:00:27,000 --> 00:00:36,000
+They were all particularly intrigued with proving the existence of problems unsolvable by realizable machines.
+
+5
+00:00:36,000 --> 00:00:42,000
+Which, of course, meant characterizing the problems that could be solved by realizable machines.
+
+6
+00:00:42,000 --> 00:00:49,000
+It turned out that each model was capable of computing *exactly* the same set of integer functions!
+
+7
+00:00:49,000 --> 00:00:56,000
+This was proved by coming up with constructions that translated the steps in a computation between the various models.
+
+8
+00:00:56,000 --> 00:01:05,000
+It was possible to show that if a computation could be described by one model, an equivalent description exists in the other model.
+
+9
+00:01:05,000 --> 00:01:12,000
+This lead to a notion of computability that was independent of the computation scheme chosen.
+
+10
+00:01:12,000 --> 00:01:24,000
+This notion is formalized by Church's Thesis, which says that every discrete function computable by any realizable machine is computable by some Turing Machine.
+
+11
+00:01:24,000 --> 00:01:38,000
+So if we say the function f(x) is computable, that's equivalent to saying that there's a TM that given x as an input on its tape will write f(x) as an output on the tape and halt.
+
+12
+00:01:38,000 --> 00:01:45,000
+As yet there's no proof of Church's Thesis, but it's universally accepted that it's true.
+
+13
+00:01:45,000 --> 00:01:50,000
+In general "computable" is taken to mean "computable by some TM".
+
+14
+00:01:50,000 --> 00:01:57,000
+If you're curious about the existence of uncomputable functions, please see the optional video at the end of this lecture.
+
+15
+00:01:57,000 --> 00:02:04,000
+Okay, we've decided that Turing Machines can model any realizable computation.
+
+16
+00:02:04,000 --> 00:02:11,000
+In other words for every computation we want to perform, there's a (different) Turing Machine that will do the job.
+
+17
+00:02:11,000 --> 00:02:15,000
+But how does this help us design a general-purpose computer?
+
+18
+00:02:15,000 --> 00:02:21,000
+Or are there some computations that will require a special-purpose machine no matter what?
+
+19
+00:02:21,000 --> 00:02:25,000
+What we'd like to find is a universal function U:
+
+20
+00:02:25,000 --> 00:02:33,000
+it would take two arguments, k and j, and then compute the result of running T_k on input j.
+
+21
+00:02:33,000 --> 00:02:39,000
+Is U computable, i.e., is there a universal Turing Machine T_U?
+
+22
+00:02:39,000 --> 00:02:55,000
+If so, then instead of many ad-hoc TMs, we could just use T_U to compute the results for any computable function. .249 Surprise!  U is computable and T_U exists.
+
+23
+00:02:55,000 --> 00:03:00,000
+If fact there are infinitely many universal TMs, some quite simple.
+
+24
+00:03:00,000 --> 00:03:06,000
+The smallest known universal TM has 4 states and uses 6 tape symbols.
+
+25
+00:03:06,000 --> 00:03:13,000
+A universal machine is capable of performing any computation that can be performed by any TM!
+
+26
+00:03:13,000 --> 00:03:16,000
+What's going on here?
+
+27
+00:03:16,000 --> 00:03:24,000
+k encodes a "program" -- a description of some arbitrary TM that performs a particular computation.
+
+28
+00:03:24,000 --> 00:03:29,000
+j encodes the input data on which to perform that computation.
+
+29
+00:03:29,000 --> 00:03:39,000
+T_U "interprets" the program, emulating the steps T_k will take to process the input and write out the answer.
+
+30
+00:03:39,000 --> 00:03:49,000
+The notion of interpreting a coded representation of a computation is a key idea and forms the basis for our stored program computer.
+
+31
+00:03:49,000 --> 00:03:56,000
+The Universal Turing Machine is the paradigm for modern general-purpose computers.
+
+32
+00:03:56,000 --> 00:04:02,000
+Given an ISA we want to know if it's equivalent to a universal Turing Machine.
+
+33
+00:04:02,000 --> 00:04:08,000
+If so, it can emulate every other TM and hence compute any computable function.
+
+34
+00:04:08,000 --> 00:04:12,000
+How do we show our computer is Turing Universal?
+
+35
+00:04:12,000 --> 00:04:17,000
+Simply demonstrate that it can emulate some known Universal Turing Machine.
+
+36
+00:04:17,000 --> 00:04:27,000
+The finite memory on actual computers will mean we can only emulate UTM operations on inputs up to a certain size
+
+37
+00:04:27,000 --> 00:04:33,000
+but within this limitation we can show our computer can perform any computation that fits into memory.
+
+38
+00:04:33,000 --> 00:04:37,000
+As it turns out this is not a high bar:
+
+39
+00:04:37,000 --> 00:04:44,000
+so long as the ISA has conditional branches and some simple arithmetic, it will be Turing Universal.
+
+40
+00:04:44,000 --> 00:04:51,000
+This notion of encoding a program in a way that allows it to be data to some other program is a key idea in computer science.
+
+41
+00:04:51,000 --> 00:05:06,000
+We often translate a program Px written to run on some abstract high-level machine (eg, a program in C or Java) into, say, an assembly language program Py that can be interpreted by our CPU.
+
+42
+00:05:06,000 --> 00:05:09,000
+This translation is called compilation.
+
+43
+00:05:09,000 --> 00:05:17,000
+Much of software engineering is based on the idea of taking a program and using it as as component in some larger program.
+
+44
+00:05:17,000 --> 00:05:32,000
+Given a strategy for compiling programs, that opens the door to designing new programming languages that let us express our desired computation using data structures and operations particularly suited to the task at hand.
+
+45
+00:05:32,000 --> 00:05:38,000
+So what have learned from the mathematicians' work on models of computation?
+
+46
+00:05:38,000 --> 00:05:48,000
+Well, it's nice to know that the computing engine we're planning to build will be able to perform any computation that can be performed on any realizable machine.
+
+47
+00:05:48,000 --> 00:05:56,000
+And the development of the universal Turing Machine model paved the way for modern stored-program computers.
+
+48
+00:05:56,000 --> 00:06:01,000
+The bottom line: we're good to go with the Beta ISA!
+

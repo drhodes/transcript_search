@@ -1,0 +1,156 @@
+0
+00:00:00,000 --> 00:00:03,000
+So far we've talked about assembling instructions.
+
+1
+00:00:03,000 --> 00:00:04,000
+What about data?
+
+2
+00:00:04,000 --> 00:00:13,000
+How do we allocate and initialize data storage and how do we get those values into registers so that they can be used as operands?
+
+3
+00:00:13,000 --> 00:00:19,000
+Here we see a program that allocates and initializes two memory locations using the LONG macro.
+
+4
+00:00:19,000 --> 00:00:24,000
+We've used labels to remember the addresses of these locations for later reference.
+
+5
+00:00:24,000 --> 00:00:36,000
+When the program is assembled the values of the label N and factN are 0 and 4 respectively, the addresses of the memory locations holding the two data values.
+
+6
+00:00:36,000 --> 00:00:48,000
+To access the first data value, the program uses a LD instruction, in this case one of convenience macros that supplies R31 as the default value of the Ra field.
+
+7
+00:00:48,000 --> 00:00:55,000
+The assembler replaces the reference to the label N with its value 0 from the symbol table.
+
+8
+00:00:55,000 --> 00:01:05,000
+When the LD is executed, it computes the memory address by adding the constant (0) to the value of the Ra register (which is R31 and hence the value is 0)
+
+9
+00:01:05,000 --> 00:01:13,000
+to get the address (0) of the memory location from which to fetch the value to be placed in R1.
+
+10
+00:01:13,000 --> 00:01:20,000
+The constants needed as values for data words and instruction fields can be written as expressions.
+
+11
+00:01:20,000 --> 00:01:27,000
+These expressions are evaluated by the assembler as it assembles the program and the resulting value is used as needed.
+
+12
+00:01:27,000 --> 00:01:32,000
+Note that the expressions are evaluated at the time the assembler runs.
+
+13
+00:01:32,000 --> 00:01:37,000
+By the time the program runs on the Beta, the resulting value is used.
+
+14
+00:01:37,000 --> 00:01:43,000
+The assembler does NOT generate ADD and MUL instructions to compute the value during program execution.
+
+15
+00:01:43,000 --> 00:01:52,000
+If a value is needed for an instruction field or initial data value, the assembler has to be able to perform the arithmetic itself.
+
+16
+00:01:52,000 --> 00:02:00,000
+If you need the program to compute a value during execution, you have to write the necessary instructions as part of your program.
+
+17
+00:02:00,000 --> 00:02:13,000
+One last UASM feature: there's a special symbol ".", called "dot", whose value is the address of the next main memory location to be filled by the assembler when it generates binary data.
+
+18
+00:02:13,000 --> 00:02:20,000
+Initially "."  is 0 and it's incremented each time a new byte value is generated.
+
+19
+00:02:20,000 --> 00:02:27,000
+We can set the value of "." to tell the assembler where in memory we wish to place a value.
+
+20
+00:02:27,000 --> 00:02:33,000
+In this example, the constant 0xDEADBEEF is placed into location 0x100 of main memory.
+
+21
+00:02:33,000 --> 00:02:42,000
+And we can use "." in expressions to compute the values for other symbols, as shown here when defining the value for the symbol "k".
+
+22
+00:02:42,000 --> 00:02:50,000
+In fact, the label definition "k:" is exactly equivalent to the UASM statement "k = ."
+
+23
+00:02:50,000 --> 00:02:59,000
+We can even increment the value of "." to skip over locations, e.g., if we wanted to leave space for an un initialized array.
+
+24
+00:02:59,000 --> 00:03:03,000
+And that's assembly language!
+
+25
+00:03:03,000 --> 00:03:09,000
+We use assembly language as a convenient notation for generating the binary encoding for instructions and data.
+
+26
+00:03:09,000 --> 00:03:17,000
+We let the assembler build the bit-level representations we need and to keep track of the addresses where these values are stored in main memory.
+
+27
+00:03:17,000 --> 00:03:24,000
+UASM itself provides support for values, symbols, labels and macros.
+
+28
+00:03:24,000 --> 00:03:29,000
+Values can be written as constants or expressions involving constants.
+
+29
+00:03:29,000 --> 00:03:36,000
+We use symbols to give meaningful names to values so that our programs will be more readable and more easily modified.
+
+30
+00:03:36,000 --> 00:03:52,000
+Similarly, we use labels to give meaningful names to addresses in main memory and then use the labels in referring to data locations in LD or ST instructions, or to instruction locations in branch instructions.
+
+31
+00:03:52,000 --> 00:03:58,000
+Macros hide the details of how instructions are assembled from their component fields.
+
+32
+00:03:58,000 --> 00:04:04,000
+And we can use "." to control where the assembler places values in main memory.
+
+33
+00:04:04,000 --> 00:04:09,000
+The assembler is itself a program that runs on our computer.
+
+34
+00:04:09,000 --> 00:04:13,000
+That raises an interesting "chicken and egg problem":
+
+35
+00:04:13,000 --> 00:04:18,000
+how did the first assembler program get assembled into binary so it could run on a computer?
+
+36
+00:04:18,000 --> 00:04:21,000
+Well, it was hand-assembled into binary.
+
+37
+00:04:21,000 --> 00:04:35,000
+I suspect it processed a very simple language indeed, with the bells and whistles of symbols, labels, macros, expression evaluation, etc. added only after basic instructions could be assembled by the program.
+
+38
+00:04:35,000 --> 00:04:43,000
+And I'm sure they were very careful not loose the binary so they wouldn't have to do the hand-assembly a second time!
+

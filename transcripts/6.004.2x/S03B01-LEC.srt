@@ -1,0 +1,276 @@
+0
+00:00:00,000 --> 00:00:09,000
+In the previous lecture we developed the instruction set architecture for the Beta, the computer system we'll be building throughout this part of the course.
+
+1
+00:00:09,000 --> 00:00:12,000
+The Beta incorporates two types of storage or memory.
+
+2
+00:00:12,000 --> 00:00:23,000
+In the CPU datapath there are 32 general-purpose registers, which can be read to supply source operands for the ALU or written with the ALU result.
+
+3
+00:00:23,000 --> 00:00:33,000
+In the CPU's control logic there is a special-purpose register called the program counter, which contains the address of the memory location holding the next instruction to be executed.
+
+4
+00:00:33,000 --> 00:00:45,000
+The datapath and control logic are connected to a large main memory with a maximum capacity of 2^32 bytes, organized as 2^30 32-bit words.
+
+5
+00:00:45,000 --> 00:00:49,000
+This memory holds both data and instructions.
+
+6
+00:00:49,000 --> 00:00:53,000
+Beta instructions are 32-bit values comprised of various fields.
+
+7
+00:00:53,000 --> 00:00:58,000
+The 6-bit OPCODE field specifies the operation to be performed.
+
+8
+00:00:58,000 --> 00:01:07,000
+The 5-bit Ra, Rb, and Rc fields contain register numbers, specifying one of the 32 general-purpose registers.
+
+9
+00:01:07,000 --> 00:01:18,000
+There are two instruction formats: one specifying an opcode and three registers, the other specifying an opcode, two registers, and a 16-bit signed constant.
+
+10
+00:01:18,000 --> 00:01:21,000
+There three classes of instructions.
+
+11
+00:01:21,000 --> 00:01:30,000
+The ALU instructions perform an arithmetic or logic operation on two operands, producing a result that is stored in the destination register.
+
+12
+00:01:30,000 --> 00:01:37,000
+The operands are either two values from the general-purpose registers, or one register value and a constant.
+
+13
+00:01:37,000 --> 00:01:43,000
+The yellow highlighting indicates instructions that use the second instruction format.
+
+14
+00:01:43,000 --> 00:01:53,000
+The Load/Store instructions access main memory, either loading a value from main memory into a register, or storing a register value to main memory.
+
+15
+00:01:53,000 --> 00:02:01,000
+And, finally, there are branches and jumps whose execution may change the program counter and hence the address of the next instruction to be executed.
+
+16
+00:02:01,000 --> 00:02:07,000
+To program the Beta we'll need to load main memory with binary-encoded instructions.
+
+17
+00:02:07,000 --> 00:02:17,000
+Figuring out each encoding is clearly the job for a computer, so we'll create a simple programming language that will let us specify the opcode and operands for each instruction.
+
+18
+00:02:17,000 --> 00:02:24,000
+So instead of writing the binary at the top of slide, we'll write assembly language statements to specify instructions in symbolic form.
+
+19
+00:02:24,000 --> 00:02:33,000
+Of course we still have think about which registers to use for which values and write sequences of instructions for more complex operations.
+
+20
+00:02:33,000 --> 00:02:45,000
+By using a high-level language we can move up one more level abstraction and describe the computation we want in terms of variables and mathematical operations rather than registers and ALU functions.
+
+21
+00:02:45,000 --> 00:02:51,000
+In this lecture we'll describe the assembly language we'll use for programming the Beta.
+
+22
+00:02:51,000 --> 00:02:58,000
+And in the next lecture we'll figure out how to translate high-level languages, such as C, into assembly language.
+
+23
+00:02:58,000 --> 00:03:02,000
+The layer cake of abstractions gets taller yet:
+
+24
+00:03:02,000 --> 00:03:08,000
+we could write an interpreter for say, Python, in C and then write our application programs in Python.
+
+25
+00:03:08,000 --> 00:03:22,000
+Nowadays, programmers often choose the programming language that's most suitable for expressing their computations, then, after perhaps many layers of translation, come up with a sequence of instructions that the Beta can actually execute.
+
+26
+00:03:22,000 --> 00:03:34,000
+Okay, back to assembly language, which we'll use to shield ourselves from the bit-level representations of instructions and from having to know the exact location of variables and instructions in memory.
+
+27
+00:03:34,000 --> 00:03:45,000
+A program called the "assembler" reads a text file containing the assembly language program and produces an array of 32-bit words that can be used to initialize main memory.
+
+28
+00:03:45,000 --> 00:03:52,000
+We'll learn the UASM assembly language, which is built into BSim, our simulator for the Beta ISA.
+
+29
+00:03:52,000 --> 00:03:56,000
+UASM is really just a fancy calculator!
+
+30
+00:03:56,000 --> 00:04:07,000
+It reads arithmetic expressions and evaluates them to produce 8-bit values, which it then adds sequentially to the array of bytes which will eventually be loaded into the Beta's memory.
+
+31
+00:04:07,000 --> 00:04:14,000
+UASM supports several useful language features that make it easier to write assembly language programs.
+
+32
+00:04:14,000 --> 00:04:19,000
+Symbols and labels let us give names to particular values and addresses.
+
+33
+00:04:19,000 --> 00:04:29,000
+And macros let us create shorthand notations for sequences of expressions that, when evaluated, will generate the binary representations for instructions and data.
+
+34
+00:04:29,000 --> 00:04:32,000
+Here's an example UASM source file.
+
+35
+00:04:32,000 --> 00:04:41,000
+Typically we write one UASM statement on each line and can use spaces, tabs, and newlines to make the source as readable as possible.
+
+36
+00:04:41,000 --> 00:04:44,000
+We've added some color coding to help in our explanation.
+
+37
+00:04:44,000 --> 00:04:49,000
+Comments (shown in green) allow us to add text annotations to the program.
+
+38
+00:04:49,000 --> 00:04:52,000
+Good comments will help remind you how your program works.
+
+39
+00:04:52,000 --> 00:04:59,000
+You really don't want to have figure out from scratch what a section of code does each time you need to modify or debug it!
+
+40
+00:04:59,000 --> 00:05:02,000
+There are two ways to add comments to the code.
+
+41
+00:05:02,000 --> 00:05:07,000
+"//" starts a comment, which then occupies the rest of the source line.
+
+42
+00:05:07,000 --> 00:05:16,000
+Any characters after "//" are ignored by the assembler, which will start processing statements again at the start of the next line in the source file.
+
+43
+00:05:16,000 --> 00:05:26,000
+You can also enclose comment text using the delimiters "/*" and "*/" and the assembler will ignore everything in-between.
+
+44
+00:05:26,000 --> 00:05:38,000
+Using this second type of comment, you can "comment-out" many lines of code by placing "/*" at the start and, many lines later, end the comment section with a "*/".
+
+45
+00:05:38,000 --> 00:05:42,000
+Symbols (shown in red) are symbolic names for constant values.
+
+46
+00:05:42,000 --> 00:05:52,000
+Symbols make the code easier to understand, e.g., we can use N as the name for an initial value for some computation, in this case the value 12.
+
+47
+00:05:52,000 --> 00:05:58,000
+Subsequent statements can refer to this value using the symbol N instead of entering the value 12 directly.
+
+48
+00:05:58,000 --> 00:06:03,000
+When reading the program, we'll know that N means this particular initial value.
+
+49
+00:06:03,000 --> 00:06:13,000
+So if later we want to change the initial value, we only have to change the definition of the symbol N rather than find all the 12's in our program and change them.
+
+50
+00:06:13,000 --> 00:06:22,000
+In fact some of the other appearances of 12 might not refer to this initial value and so to be sure we only changed the ones that did,
+
+51
+00:06:22,000 --> 00:06:27,000
+we'd have to read and understand the whole program to make sure we only edited the right 12's.
+
+52
+00:06:27,000 --> 00:06:29,000
+You can imagine how error-prone that might be!
+
+53
+00:06:29,000 --> 00:06:33,000
+So using symbols is a practice you want to follow!
+
+54
+00:06:33,000 --> 00:06:37,000
+Note that all the register names are shown in red.
+
+55
+00:06:37,000 --> 00:06:43,000
+We'll define the symbols R0 through R31 to have the values 0 through 31.
+
+56
+00:06:43,000 --> 00:06:56,000
+Then we'll use those symbols to help us understand which instruction operands are intended to be registers, e.g., by writing R1, and which operands are numeric values, e.g., by writing the number 1.
+
+57
+00:06:56,000 --> 00:07:01,000
+We could just use numbers everywhere, but the code would be much harder to read and understand.
+
+58
+00:07:01,000 --> 00:07:08,000
+Labels (shown in yellow) are symbols whose value are the address of a particular location in the program.
+
+59
+00:07:08,000 --> 00:07:13,000
+Here, the label "loop" will be our name for the location of the MUL instruction in memory.
+
+60
+00:07:13,000 --> 00:07:19,000
+In the BNE at the end of the code, we use the label "loop" to specify the MUL instruction as the branch target.
+
+61
+00:07:19,000 --> 00:07:25,000
+So if R1 is non-zero, we want to branch back to the MUL instruction and start another iteration.
+
+62
+00:07:25,000 --> 00:07:33,000
+We'll use indentation for most UASM statements to make it easy to spot the labels defined by the program.
+
+63
+00:07:33,000 --> 00:07:40,000
+Indentation isn't required, it's just another habit assembly language programmers use to keep their programs readable.
+
+64
+00:07:40,000 --> 00:07:47,000
+We use macro invocations (shown in blue) when we want to write Beta instructions.
+
+65
+00:07:47,000 --> 00:07:55,000
+When the assembler encounters a macro, it "expands" the macro, replacing it with a string of text provided by in the macro's definition.
+
+66
+00:07:55,000 --> 00:08:03,000
+During expansion, the provided arguments are textually inserted into the expanded text at locations specified in the macro definition.
+
+67
+00:08:03,000 --> 00:08:08,000
+Think of a macro as shorthand for a longer text string we could have typed in.
+
+68
+00:08:08,000 --> 00:08:12,000
+We'll show how all this works in the next video segment.
+

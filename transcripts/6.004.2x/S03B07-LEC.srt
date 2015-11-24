@@ -1,0 +1,196 @@
+0
+00:00:00,000 --> 00:00:06,000
+An interesting question for computer architects is what capabilities must be included in the ISA?
+
+1
+00:00:06,000 --> 00:00:20,000
+When we studied Boolean gates in Part 1 of the course, we were able to prove that NAND gates were universal, i.e., that we could implement any Boolean function using only circuits constructed from NAND gates.
+
+2
+00:00:20,000 --> 00:00:24,000
+We can ask the corresponding question of our ISA:
+
+3
+00:00:24,000 --> 00:00:29,000
+is it universal, i.e., can it be used to perform any computation?
+
+4
+00:00:29,000 --> 00:00:32,000
+What problems can we solve with a von Neumann computer?
+
+5
+00:00:32,000 --> 00:00:36,000
+Can the Beta solve any problem FSMs can solve?
+
+6
+00:00:36,000 --> 00:00:40,000
+Are there problems FSMs can't solve?
+
+7
+00:00:40,000 --> 00:00:43,000
+If so, can the Beta solve those problems?
+
+8
+00:00:43,000 --> 00:00:47,000
+Do the answers to these questions depend on the particular ISA?
+
+9
+00:00:47,000 --> 00:00:52,000
+To provide some answers, we need a mathematical model of computation.
+
+10
+00:00:52,000 --> 00:00:58,000
+Reasoning about the model, we should be able to prove what can be computed and what can't.
+
+11
+00:00:58,000 --> 00:01:05,000
+And hopefully we can ensure that the Beta ISA has the functionality needed to perform any computation.
+
+12
+00:01:05,000 --> 00:01:16,000
+The roots of computer science stem from the evaluation of many alternative mathematical models of computation to determine the classes of computation each could represent.
+
+13
+00:01:16,000 --> 00:01:24,000
+An elusive goal was to find a universal model, capable of representing *all* realizable computations.
+
+14
+00:01:24,000 --> 00:01:35,000
+In other words if a computation could be described using some other well-formed model, we should also be able to describe the same computation using the universal model.
+
+15
+00:01:35,000 --> 00:01:43,000
+One candidate model might be finite state machines (FSMs), which can be built using sequential logic.
+
+16
+00:01:43,000 --> 00:01:55,000
+Using Boolean logic and state transition diagrams we can reason about how an FSM will operate on any given input, predicting the output with 100% certainty.
+
+17
+00:01:55,000 --> 00:02:00,000
+Are FSMs the universal digital computing device?
+
+18
+00:02:00,000 --> 00:02:08,000
+In other words, can we come up with FSM implementations that implement all computations that can be solved by any digital device?
+
+19
+00:02:08,000 --> 00:02:16,000
+Despite their usefulness and flexibility, there are common problems that cannot be solved by any FSM.
+
+20
+00:02:16,000 --> 00:02:26,000
+For example, can we build an FSM to determine if a string of parentheses (properly encoded into a binary sequence) is well-formed?
+
+21
+00:02:26,000 --> 00:02:36,000
+A parenthesis string is well-formed if the parentheses balance, i.e., for every open parenthesis there is a matching close parenthesis later in the string.
+
+22
+00:02:36,000 --> 00:02:25,000
+In the example shown here, the input string on the top is well-formed, but the input string on the bottom is not.
+
+23
+00:02:25,000 --> 00:02:53,000
+After processing the input string, the FSM would output a 1 if the string is well-formed, 0 otherwise.
+
+24
+00:02:53,000 --> 00:02:57,000
+Can this problem be solved using an FSM?
+
+25
+00:02:57,000 --> 00:02:59,000
+No, it can't.
+
+26
+00:02:59,000 --> 00:03:05,000
+The difficulty is that the FSM uses its internal state to encode what it knows about the history of the inputs.
+
+27
+00:03:05,000 --> 00:03:18,000
+In the paren checker, the FSM would need to count the number of unbalanced open parens seen so far, so it can determine if future input contains the required number of close parens.
+
+28
+00:03:18,000 --> 00:03:27,000
+But in a finite state machine there are only a fixed number of states, so a particular FSM has a maximum count it can reach.
+
+29
+00:03:27,000 --> 00:03:38,000
+If we feed the FSM an input with more open parens than it has the states to count, it won't be able to check if the input string is well-formed.
+
+30
+00:03:38,000 --> 00:03:45,000
+The "finite-ness" of FSMs limits their ability to solve problems that require unbounded counting.
+
+31
+00:03:45,000 --> 00:03:39,000
+Hmm, what other models of computation might we consider?
+
+32
+00:03:39,000 --> 00:03:57,000
+Mathematics to the rescue, in this case in the form of a British mathematician named Alan Turing.
+
+33
+00:03:57,000 --> 00:04:06,000
+In the early 1930's Alan Turing was one of many mathematicians studying the limits of proof and computation.
+
+34
+00:04:06,000 --> 00:04:18,000
+He proposed a conceptual model consisting of an FSM combined with a infinite digital tape that could read and written under the control of the FSM.
+
+35
+00:04:18,000 --> 00:04:32,000
+The inputs to some computation would be encoded as symbols on the tape, then the FSM would read the tape, changing its state as it performed the computation, then write the answer onto the tape and finally halting.
+
+36
+00:04:32,000 --> 00:04:36,000
+Nowadays, this model is called a Turing Machine (TM).
+
+37
+00:04:36,000 --> 00:04:43,000
+Turing Machines, like other models of the time, solved the "finite" problem of FSMs.
+
+38
+00:04:43,000 --> 00:04:47,000
+So how does all this relate to computation?
+
+39
+00:04:47,000 --> 00:04:56,000
+Assuming the non-blank input on the tape occupies a finite number of adjacent cells, it can be expressed as a large integer.
+
+40
+00:04:56,000 --> 00:05:07,000
+Just construct a binary number using the bit encoding of the symbols from the tape, alternating between symbols to the left of the tape head and symbols to the right of the tape head.
+
+41
+00:05:07,000 --> 00:05:13,000
+Eventually all the symbols will be incorporated into the (very large) integer representation.
+
+42
+00:05:13,000 --> 00:05:27,000
+So both the input and output of the TM can be thought of as large integers, and the TM itself as implementing an integer function that maps input integers to output integers.
+
+43
+00:05:27,000 --> 00:05:33,000
+The FSM brain of the Turing Machine can be characterized by its truth table.
+
+44
+00:05:33,000 --> 00:05:42,000
+And we can systematically enumerate all the possible FSM truth tables, assigning an index to each truth table as it appears in the enumeration.
+
+45
+00:05:42,000 --> 00:05:51,000
+Note that indices get very large very quickly since they essentially incorporate all the information in the truth table.
+
+46
+00:05:51,000 --> 00:05:55,000
+Fortunately we have a very large supply of integers!
+
+47
+00:05:55,000 --> 00:06:02,000
+We'll use the index for a TM's FSM to identify the TM as well.
+
+48
+00:06:02,000 --> 00:06:11,000
+So we can talk about TM 347 running on input 51, producing the answer 42.
+

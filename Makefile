@@ -1,16 +1,15 @@
-TRANSCRIPT_FILE=./js/transcripts.js
+TRANSCRIPT_FILE=./js/json-transcripts/6.004.2x.json
+TRANSCRIPT_PATH=./transcripts/6.004.2x
 
 build:
 	echo ok
 
 test:
 	sleep .1
-	./tsearch.py -d ./transcripts
+	./tsearch.py -d $(TRANSCRIPT_PATH)
 
 json:
-	echo "JSON_transcripts=" > $(TRANSCRIPT_FILE)
-	./tsearch.py -d ./transcripts >> $(TRANSCRIPT_FILE)
-	echo ";" >> $(TRANSCRIPT_FILE)
+	./build-json.bash
 
 # check for dependencies more reliably.
 deps:

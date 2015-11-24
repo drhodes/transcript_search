@@ -2,40 +2,13 @@
 //
 var nil = null;
 
-
-
 function SearchModule() {
-    
     // everything in this function is private except the last
     // function, which is returned as an interface to the search
     // functionality
-   
+
     // ------------------------------------------------------------------
-    // Set aside a place for loading the transcript into
-    var JSON_transcripts = {};
-    var url = "https://drhodes.github.io/transcript_search/js/json-transcripts/6.004.2x.json";
-    $.getJSON(url, function(json) {
-        JSON_transcripts = json;
-        console.log( "JSON Data: " + json );
-    });
-    
-    // function loadJsonTranscripts(courseName) {
-    //     // $.getJSON("./js/json-transcripts/6.004.2x.json", function(json) {
-    //     //     console.log(json); // this will show the info it in firebug console
-    //     // });
-        
-    //     $.ajax({
-    //         //'async': false,
-    //         'global': false,
-    //         'url': "./js/json-transcripts/6.004.2x.json",
-    //         'dataType': "text",
-    //         'success': function (data) {
-    //             JSON_transcripts = $.parseJSON(data);
-    //         }
-    //     });
-    // }
-    // loadJsonTranscripts();
-    
+    // parse the URL parameters and determine
     // going to need this soon
     // https://stackoverflow.com/questions/8486099
     // thanks @ Jan Turoň
@@ -48,7 +21,15 @@ function SearchModule() {
     //     });
     //     return result;
     // }
-
+    
+    // ------------------------------------------------------------------
+    // Set aside a place for loading the transcript into
+    var JSON_TRANSCRIPTS = {};
+    var url = "https://drhodes.github.io/transcript_search/js/json-transcripts/6.004.2x.json";
+    $.getJSON(url, function(json) {
+        JSON_TRANSCRIPTS = json;
+        console.log( "JSON Data: " + json );
+    });
     
     function hasDirectiveWE(terms) {
         return $.inArray("#we", terms) != -1;
@@ -71,7 +52,7 @@ function SearchModule() {
             return [];
         }
         
-        var lec = JSON_transcripts[lecId];
+        var lec = JSON_TRANSCRIPTS[lecId];
         var items = lec.items;
         searchTerms = searchTerms.toLowerCase();
         terms = searchTerms.split(" ");
@@ -147,9 +128,9 @@ function SearchModule() {
     // This is the only function that needs to be visible.
     function refreshResults(terms, course) {
         // As of now, this course variable is ignored.  Soon it will
-        // be used to select the appropriate JSON_transcripts.
+        // be used to select the appropriate JSON_TRANSCRIPTS.
         clearResultsDiv();
-        var lectures = Object.keys(JSON_transcripts);
+        var lectures = Object.keys(JSON_TRANSCRIPTS);
         var numFound = 0;
         const limit = 25;
         var accum = [];
@@ -159,7 +140,7 @@ function SearchModule() {
                 return;
             }
             
-            var lecture = JSON_transcripts[lecId];
+            var lecture = JSON_TRANSCRIPTS[lecId];
             var results = searchForTerms(lecId, terms);
             if (results.length!=0) {
                 numFound += results.length;

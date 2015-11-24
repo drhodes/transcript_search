@@ -30,7 +30,7 @@ URL_TEMPLATE_UNCLOBBERED = (
 URL_TEMPLATE = (
     "https://courses.edx.org/courses/"
     "course-v1:MITx+6.004.2x+3T2015/"
-    "courseware/c3/c3s<SEQ>/<PAGE>"
+    "courseware/c3/c3s<SEQ>/<BLOCK>"
     "?activate_block_id=block-v1"
     "%3AMITx"
     "%2B6.004.2x"
@@ -38,7 +38,7 @@ URL_TEMPLATE = (
     "%2Btype"
     "%40discussion"
     "%2Bblock"
-    "%40c3s<SEQ>v<PAGE>"
+    "%40c3s<SEQ>v<BLOCK>"
 )
 
 def get_srt_filenames(srt_path):
@@ -91,7 +91,7 @@ def generate_url(basename):
     # the url contains lots of % to begin with, so string
     # interpolation can't be used    
     url = URL_TEMPLATE.replace("<SEQ>", s) 
-    url = url.replace("<PAGE>", p)
+    url = url.replace("<BLOCK>", p)
     return url
    
 def generate_json(srt_path):
@@ -116,13 +116,16 @@ def generate_json(srt_path):
         }        
         blob[basename] = item_table
     return json.dumps(blob)
-        
+
+
+
 def main():
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION)  
     parser.add_argument('-d', '--srt-path',
                         dest='srt_path',
                         required=True,
                         help='supply the path to a transcript directory')
+    
     args = parser.parse_args()
     print generate_json(args.srt_path)
     

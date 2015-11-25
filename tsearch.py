@@ -120,14 +120,33 @@ def generate_json(srt_path):
 
 
 def main():
+    # output is sent to stdout, so these cmdline args are mutally
+    # exclusive.
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION)  
     parser.add_argument('-d', '--srt-path',
                         dest='srt_path',
-                        required=True,
+                        required=False,
+                        default=None,
                         help='supply the path to a transcript directory')
     
+    parser.add_argument('-p', '--pdf-path',
+                        dest='pdf_path',
+                        required=False,
+                        default=None,
+                        help='supply the path to a pdf directory')
+
+    
     args = parser.parse_args()
-    print generate_json(args.srt_path)
+
+    if args.pdf_path and args.srt_path:
+        raise ValueError("-d and -p options are mutally exclusive")
+
+    if args.pdf_path:
+        pass
+
+    if args.srt_path:
+        print generate_json(args.srt_path)
+
     
 if __name__ == "__main__":
     main()

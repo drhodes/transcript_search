@@ -30,4 +30,5 @@ clean:
 	-trash *~ 2> /dev/null || true
 	-trash ./js/*~ 2> /dev/null || true
 	-trash ./js/transcripts.js 2> /dev/null || true
+	-trash *.pyc 2> /dev/null || true
 

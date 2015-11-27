@@ -74,15 +74,15 @@ def get_srt_filenames(srt_path):
     return files
 
 def divine_scrape_parameters(basename):
-    # given S09B04.srt
+    # given C02S09B04.srt
     # return something like {sequence: 9, page: 4, chapter: 2}
     if "S" not in basename:
-        raise ValueError(".srt basename must be of the form C##S##B##-[LEC|WE].srt,"
-                         " where the numbers may change")
+        raise ValueError(".srt basename must be of the form C##S##B##-[LEC|WE].srt,")
 
     params = {
         "sequence": "",
         "page": "",
+        "chapter": "",
     }
 
     # if an exception happens here then it's game over.

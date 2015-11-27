@@ -30,7 +30,7 @@ URL_TEMPLATE_UNCLOBBERED = (
 URL_TEMPLATE = (
     "https://courses.edx.org/courses/"
     "course-v1:MITx+6.004.2x+3T2015/"
-    "courseware/c3/c3s<SEQ>/<BLOCK>"
+    "courseware/c<CHAPTER>/c<CHAPTER>s<SEQ>/<BLOCK>"
     "?activate_block_id=block-v1"
     "%3AMITx"
     "%2B6.004.2x"
@@ -38,7 +38,7 @@ URL_TEMPLATE = (
     "%2Btype"
     "%40discussion"
     "%2Bblock"
-    "%40c3s<SEQ>v<BLOCK>"
+    "%40c<CHAPTER>s<SEQ>v<BLOCK>"
 )
 
 

@@ -41,6 +41,20 @@ URL_TEMPLATE = (
     "%40c3s<SEQ>v<BLOCK>"
 )
 
+
+# https://courses.edx.org/courses/
+# course-v1:MITx+6.004.2x+3T2015/
+# courseware/c4/c4s1/1
+# ?activate_block_id=block-v1
+# %3AMITx
+# %2B6.004.2x
+# %2B3T2015
+# %2Btype
+# %40discussion
+# %2Bblock%40c4s1v1
+
+
+
 def get_srt_filenames(srt_path):
     # this needs to change to os.walk if sub directories are used.
     srts = os.listdir(srt_path)
@@ -61,9 +75,9 @@ def get_srt_filenames(srt_path):
 
 def divine_scrape_parameters(basename):
     # given S09B04.srt
-    # return something like {sequence: 9, page 4}
+    # return something like {sequence: 9, page: 4, chapter: 2}
     if "S" not in basename:
-        raise ValueError(".srt basename must be of the form S02B04.srt,"
+        raise ValueError(".srt basename must be of the form C##S##B##-[LEC|WE].srt,"
                          " where the numbers may change")
 
     params = {
@@ -77,6 +91,8 @@ def divine_scrape_parameters(basename):
     params["sequence"] = m.group(1).strip("0")
     m = re.search('B([0-9]+)', basename)
     params["page"] = m.group(1).strip("0")
+    m = re.search('C([0-9]+)', basename)
+    params["chapter"] = m.group(1).strip("0")
 
     return params
 
@@ -87,11 +103,13 @@ def generate_url(basename):
     params = divine_scrape_parameters(basename)
     s = params["sequence"]
     p = params["page"]
+    c = params["chapter"]
     
     # the url contains lots of % to begin with, so string
     # interpolation can't be used    
     url = URL_TEMPLATE.replace("<SEQ>", s) 
     url = url.replace("<BLOCK>", p)
+    url = url.replace("<CHAPTER>", c)
     return url
    
 def generate_json(srt_path):

@@ -12,6 +12,8 @@ something, then clone, hack and pull request. I'll most likely merge it.
 - Supply URLs back to the edx platform.
 - Supply transcript snippets.
 - Specify lecture or worked example by #LEC or #WE
+ 
+
 
 *** TODO
 - Automate .srt file scraping and link generation 
@@ -19,7 +21,7 @@ something, then clone, hack and pull request. I'll most likely merge it.
 - don't add results one by one, add them in one big chunk, those Dom
   manipulation seem slow.  (how to measure this?)
 
-
+- add pdfs to the mix
   
 
 

@@ -30,7 +30,7 @@ URL_TEMPLATE_UNCLOBBERED = (
 URL_TEMPLATE = (
     "https://courses.edx.org/courses/"
     "course-v1:MITx+6.004.2x+3T2015/"
-    "courseware/c3/c3s<SEQ>/<BLOCK>"
+    "courseware/c<CHAPTER>/c<CHAPTER>s<SEQ>/<BLOCK>"
     "?activate_block_id=block-v1"
     "%3AMITx"
     "%2B6.004.2x"
@@ -38,8 +38,22 @@ URL_TEMPLATE = (
     "%2Btype"
     "%40discussion"
     "%2Bblock"
-    "%40c3s<SEQ>v<BLOCK>"
+    "%40c<CHAPTER>s<SEQ>v<BLOCK>"
 )
+
+
+# https://courses.edx.org/courses/
+# course-v1:MITx+6.004.2x+3T2015/
+# courseware/c4/c4s1/1
+# ?activate_block_id=block-v1
+# %3AMITx
+# %2B6.004.2x
+# %2B3T2015
+# %2Btype
+# %40discussion
+# %2Bblock%40c4s1v1
+
+
 
 def get_srt_filenames(srt_path):
     # this needs to change to os.walk if sub directories are used.
@@ -60,15 +74,15 @@ def get_srt_filenames(srt_path):
     return files
 
 def divine_scrape_parameters(basename):
-    # given S09B04.srt
-    # return something like {sequence: 9, page 4}
+    # given C02S09B04.srt
+    # return something like {sequence: 9, page: 4, chapter: 2}
     if "S" not in basename:
-        raise ValueError(".srt basename must be of the form S02B04.srt,"
-                         " where the numbers may change")
+        raise ValueError(".srt basename must be of the form C##S##B##-[LEC|WE].srt,")
 
     params = {
         "sequence": "",
         "page": "",
+        "chapter": "",
     }
 
     # if an exception happens here then it's game over.
@@ -77,6 +91,8 @@ def divine_scrape_parameters(basename):
     params["sequence"] = m.group(1).strip("0")
     m = re.search('B([0-9]+)', basename)
     params["page"] = m.group(1).strip("0")
+    m = re.search('C([0-9]+)', basename)
+    params["chapter"] = m.group(1).strip("0")
 
     return params
 
@@ -87,11 +103,13 @@ def generate_url(basename):
     params = divine_scrape_parameters(basename)
     s = params["sequence"]
     p = params["page"]
+    c = params["chapter"]
     
     # the url contains lots of % to begin with, so string
     # interpolation can't be used    
     url = URL_TEMPLATE.replace("<SEQ>", s) 
     url = url.replace("<BLOCK>", p)
+    url = url.replace("<CHAPTER>", c)
     return url
    
 def generate_json(srt_path):
@@ -120,14 +138,33 @@ def generate_json(srt_path):
 
 
 def main():
+    # output is sent to stdout, so these cmdline args are mutally
+    # exclusive.
     parser = argparse.ArgumentParser(description=PROG_DESCRIPTION)  
     parser.add_argument('-d', '--srt-path',
                         dest='srt_path',
-                        required=True,
+                        required=False,
+                        default=None,
                         help='supply the path to a transcript directory')
     
+    parser.add_argument('-p', '--pdf-path',
+                        dest='pdf_path',
+                        required=False,
+                        default=None,
+                        help='supply the path to a pdf directory')
+
+    
     args = parser.parse_args()
-    print generate_json(args.srt_path)
+
+    if args.pdf_path and args.srt_path:
+        raise ValueError("-d and -p options are mutally exclusive")
+
+    if args.pdf_path:
+        pass
+
+    if args.srt_path:
+        print generate_json(args.srt_path)
+
     
 if __name__ == "__main__":
     main()

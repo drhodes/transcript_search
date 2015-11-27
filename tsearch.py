@@ -106,8 +106,14 @@ def generate_url(basename):
     c = params["chapter"]
     
     # the url contains lots of % to begin with, so string
-    # interpolation can't be used    
-    url = URL_TEMPLATE.replace("<SEQ>", s) 
+    # interpolation can't be used
+
+    # hrm. sequence seems to be local to chapters.
+    if "LEC" in basename:
+        url = URL_TEMPLATE.replace("<SEQ>", "01")
+    if "WE" in basename:
+        url = URL_TEMPLATE.replace("<SEQ>", "02")
+            
     url = url.replace("<BLOCK>", p)
     url = url.replace("<CHAPTER>", c)
     return url

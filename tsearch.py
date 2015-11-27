@@ -110,9 +110,9 @@ def generate_url(basename):
 
     # hrm. sequence seems to be local to chapters.
     if "LEC" in basename:
-        url = URL_TEMPLATE.replace("<SEQ>", "01")
+        url = URL_TEMPLATE.replace("<SEQ>", "1")
     if "WE" in basename:
-        url = URL_TEMPLATE.replace("<SEQ>", "02")
+        url = URL_TEMPLATE.replace("<SEQ>", "2")
             
     url = url.replace("<BLOCK>", p)
     url = url.replace("<CHAPTER>", c)

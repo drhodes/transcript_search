@@ -1,0 +1,280 @@
+0
+00:00:00,000 --> 00:00:10,000
+A compiler is a program that translates a high-level language program into a functionally equivalent sequence of machine instructions, i.e., an assembly language program.
+
+1
+00:00:10,000 --> 00:00:20,000
+A compiler first checks that the high-level program is correct, i.e., that the statements are well formed, the programmer isn't asking for nonsensical computations,
+
+2
+00:00:20,000 --> 00:00:28,000
+e.g., adding a string value and an integer, or attempting to use the value of a variable before it has been properly initialized.
+
+3
+00:00:28,000 --> 00:00:44,000
+The compiler may also provide warnings when operations may not produce the expected results, e.g., when converting from a floating-point number to an integer, where the floating-point value may be too large to fit in the number of bits provided by the integer.
+
+4
+00:00:44,000 --> 00:00:57,000
+If the program passes scrutiny, the compiler then proceeds to generate efficient sequences of instructions, often finding ways to rearrange the computation so that the resulting sequences are shorter and faster.
+
+5
+00:00:57,000 --> 00:01:11,000
+It's hard to beat a modern optimizing compiler at producing assembly language, since the compiler will patiently explore alternatives and deduce properties of the program that may not be apparent to even diligent assembly language programmers.
+
+6
+00:01:11,000 --> 00:01:18,000
+In this section, we'll look at a simple technique for compiling C programs into assembly.
+
+7
+00:01:18,000 --> 00:01:24,000
+Then, in the next section, we'll dive more deeply into how a modern compiler works.
+
+8
+00:01:24,000 --> 00:01:30,000
+There are two main routines in our simple compiler: compile_statement and compile_expr.
+
+9
+00:01:30,000 --> 00:01:35,000
+The job of compile_statement is to compile a single statement from the source program.
+
+10
+00:01:35,000 --> 00:01:42,000
+Since the source program is a sequence of statements, we'll be calling compile_statement repeatedly.
+
+11
+00:01:42,000 --> 00:01:48,000
+We'll focus on the compilation technique for four types of statements.
+
+12
+00:01:48,000 --> 00:01:52,000
+An unconditional statement is simply an expression that's evaluated once.
+
+13
+00:01:52,000 --> 00:01:58,000
+A compound statement is simply a sequence of statements to be executed in turn.
+
+14
+00:01:58,000 --> 00:02:06,000
+Conditional statements, sometimes called "if statements", compute the value of an test expression, e.g., a comparison such as "A < B".
+
+15
+00:02:06,000 --> 00:02:12,000
+If the test is true then statement_1 is executed, otherwise statement_2 is executed.
+
+16
+00:02:12,000 --> 00:02:15,000
+Iteration statements also contain a test expression.
+
+17
+00:02:15,000 --> 00:02:21,000
+In each iteration, if the test true, then the statement is executed, and the process repeats.
+
+18
+00:02:21,000 --> 00:02:25,000
+If the test is false, the iteration is terminated.
+
+19
+00:02:25,000 --> 00:02:36,000
+The other main routine is compile_expr whose job it is to generate code to compute the value of an expression, leaving the result in some register.
+
+20
+00:02:36,000 --> 00:02:38,000
+Expressions take many forms:
+
+21
+00:02:38,000 --> 00:02:40,000
+simple constant values
+
+22
+00:02:40,000 --> 00:02:43,000
+values from scalar or array variables,
+
+23
+00:02:43,000 --> 00:03:49,000
+assignment expressions that compute a value and then store the result in some variable,
+
+24
+00:03:49,000 --> 00:02:55,000
+unary or binary operations that combine the values of their operands with the specified operator.
+
+25
+00:02:55,000 --> 00:03:02,000
+Complex arithmetic expressions can be decomposed into sequences of unary and binary operations.
+
+26
+00:03:02,000 --> 00:03:14,000
+And, finally, procedure calls, where a named sequence of statements will be executed with the values of the supplied arguments assigned as the values for the formal parameters of the procedure.
+
+27
+00:03:14,000 --> 00:03:23,000
+Compiling procedures and procedure calls is a topic that we'll tackle next lecture since there are some complications to understand and deal with.
+
+28
+00:03:23,000 --> 00:03:29,000
+Happily, compiling the other types of expressions and statements is straightforward, so let's get started.
+
+29
+00:03:29,000 --> 00:03:34,000
+What code do we need to put the value of a constant into a register?
+
+30
+00:03:34,000 --> 00:03:43,000
+If the constant will fit into the 16-bit constant field of an instruction, we can use CMOVE to load the sign-extended constant into a register.
+
+31
+00:03:43,000 --> 00:03:51,000
+This approach works for constants between -32768 and +32767.
+
+32
+00:03:51,000 --> 00:03:58,000
+If the constant is too large, it's stored in a main memory location and we use a LD instruction to get the value into a register.
+
+33
+00:03:58,000 --> 00:04:04,000
+Loading the value of a variable is much the same as loading the value of a large constant.
+
+34
+00:04:04,000 --> 00:04:10,000
+We use a LD instruction to access the memory location that holds the value of the variable.
+
+35
+00:04:10,000 --> 00:04:20,000
+Performing an array access is slightly more complicated: arrays are stored as consecutive locations in main memory, starting with index 0.
+
+36
+00:04:20,000 --> 00:04:24,000
+Each element of the array occupies some fixed number bytes.
+
+37
+00:04:24,000 --> 00:04:32,000
+So we need code to convert the array index into the actual main memory address for the specified array element.
+
+38
+00:04:32,000 --> 00:04:41,000
+We first invoke compile_expr to generate code that evaluates the index expression and leaves the result in Rx.
+
+39
+00:04:41,000 --> 00:04:46,000
+That will be a value between 0 and the size of the array minus 1.
+
+40
+00:04:46,000 --> 00:05:00,000
+We'll use a LD instruction to access the appropriate array entry, but that means we need to convert the index into a byte offset, which we do by multiplying the index by bsize, the number of bytes in one element.
+
+41
+00:05:00,000 --> 00:05:04,000
+If b was an array of integers, bsize would be 4.
+
+42
+00:05:04,000 --> 00:05:19,000
+Now that we have the byte offset in a register, we can use LD to add the offset to the base address of the array computing the address of the desired array element, then load the memory value at that address into a register.
+
+43
+00:05:19,000 --> 00:05:21,000
+Assignment expressions are easy
+
+44
+00:05:21,000 --> 00:05:32,000
+Invoke compile_expr to generate code that loads the value of the expression into a register, then generate a ST instruction to store the value into the specified variable.
+
+45
+00:05:32,000 --> 00:05:35,000
+Arithmetic operations are pretty easy too.
+
+46
+00:05:35,000 --> 00:05:42,000
+Use compile_expr to generate code for each of the operand expressions, leaving the results in registers.
+
+47
+00:05:42,000 --> 00:05:49,000
+Then generate the appropriate ALU instruction to combine the operands and leave the answer in a register.
+
+48
+00:05:49,000 --> 00:05:53,000
+Let's look at example to see how all this works.
+
+49
+00:05:53,000 --> 00:06:00,000
+Here have an assignment expression that requires a subtract, a multiply, and an addition to compute the required value.
+
+50
+00:06:00,000 --> 00:06:07,000
+Let's follow the compilation process from start to finish as we invoke compile_expr to generate the necessary code.
+
+51
+00:06:07,000 --> 00:06:17,000
+Following the template for assignment expressions from the previous page, we recursively call compile_expr to compute value of the right-hand-side of the assignment.
+
+52
+00:06:17,000 --> 00:06:26,000
+That's a multiply operation, so, following the Operations template, we need to compile the left-hand operand of the multiply.
+
+53
+00:06:26,000 --> 00:06:34,000
+That's a subtract operation, so, we call compile_expr again to compile the left-hand operand of the subtract.
+
+54
+00:06:34,000 --> 00:06:43,000
+Aha, we know how to get the value of a variable into a register. So we generate a LD instruction to load the value of x into r1.
+
+55
+00:06:43,000 --> 00:06:48,000
+The process we're following is called "recursive descent".
+
+56
+00:06:48,000 --> 00:06:54,000
+We've used recursive calls to compile_expr to process each level of the expression tree.
+
+57
+00:06:54,000 --> 00:07:04,000
+At each recursive call the expressions get simpler, until we reach a variable or constant, where we can generate the appropriate instruction without descending further.
+
+58
+00:07:04,000 --> 00:07:10,000
+At this point we've reach a leaf of the expression tree and we're done with this branch of the recursion.
+
+59
+00:07:10,000 --> 00:07:16,000
+Now we need to get the value of the right-hand operand of the subtract into a register.
+
+60
+00:07:16,000 --> 00:07:21,000
+In case it's a small constant, so we generate a CMOVE instruction.
+
+61
+00:07:21,000 --> 00:07:31,000
+Now that both operand values are in registers, we return to the subtract template and generate a SUB instruction to do the subtraction.
+
+62
+00:07:31,000 --> 00:07:36,000
+We now have the value for the left-hand operand of the multiply in r1.
+
+63
+00:07:36,000 --> 00:07:49,000
+We follow the same process for the right-hand operand of the multiply, recursively calling compile_expr to process each level of the expression until we reach a variable or constant.
+
+64
+00:07:49,000 --> 00:07:59,000
+Then we return up the expression tree, generating the appropriate instructions as we go, following the dictates of the appropriate template from the previous slide.
+
+65
+00:07:59,000 --> 00:08:02,000
+The generated code is shown on the left of the slide.
+
+66
+00:08:02,000 --> 00:08:09,000
+The recursive-descent technique makes short work of generating code for even the most complicated of expressions.
+
+67
+00:08:09,000 --> 00:08:15,000
+There's even opportunity to find some simple optimizations by looking at adjacent instructions.
+
+68
+00:08:15,000 --> 00:08:25,000
+For example, a CMOVE followed by an arithmetic operation can often be shorted to a single arithmetic instruction with the constant as its second operand.
+
+69
+00:08:25,000 --> 00:08:33,000
+These local transformations are called "peephole optimizations" since we're only considering just one or two instructions at a time.
+

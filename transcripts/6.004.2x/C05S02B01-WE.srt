@@ -1,0 +1,284 @@
+0
+00:00:00,000 --> 00:00:08,000
+In this problem, we will examine how compilers translate high level language descriptions into assembly language.
+
+1
+00:00:08,000 --> 00:00:17,000
+We will be given several code fragments and asked to help the compiler in figuring out the dependencies of the program so that it produces valid code.
+
+2
+00:00:17,000 --> 00:00:24,000
+Let's begin with the code fragment: a = b + 3*c.
+
+3
+00:00:24,000 --> 00:00:29,000
+We can assume that our variables: a, b, and c are stored in memory.
+
+4
+00:00:29,000 --> 00:00:34,000
+We can also assume that registers may be used to store intermediate results.
+
+5
+00:00:34,000 --> 00:00:42,000
+Given the following partially completed assembly code, let's determine the missing values that the compiler would have had to determine.
+
+6
+00:00:42,000 --> 00:00:46,000
+We begin with XXX which is the first instruction.
+
+7
+00:00:46,000 --> 00:00:51,000
+The first instruction is trying to put the value of c into register R1.
+
+8
+00:00:51,000 --> 00:01:00,000
+Since c comes from memory, that means that instruction XXX must be a LD operation where c is the address of the variable to be loaded.
+
+9
+00:01:00,000 --> 00:01:13,000
+Note that LD(c, R1) is actually a macro instruction that is equal to LD(R31, c, R1).
+
+10
+00:01:13,000 --> 00:01:25,000
+The load operation would add the constant c to the value of register R31, which is always 0, thus ending up with the address c as the source address of the load operation.
+
+11
+00:01:25,000 --> 00:01:30,000
+R1 is a temporary register that will hold the value of variable c.
+
+12
+00:01:30,000 --> 00:01:34,000
+Next, we need to multiply c by 3.
+
+13
+00:01:34,000 --> 00:01:46,000
+Multiply operations are generally very expensive, so it is the compilers job to figure out that this operation could potentially be achieved by 2 simpler and faster operations.
+
+14
+00:01:46,000 --> 00:01:53,000
+The comment tells us that it first tries to compute 2 * c and store that result into R0.
+
+15
+00:01:53,000 --> 00:02:06,000
+Since R1 = c, and the constant in this operation is a 1, we need to realize that the inexpensive operation that the compiler would use for this is a logical shift to the left by one position.
+
+16
+00:02:06,000 --> 00:02:12,000
+In binary, this produces the same result as multiplying a number by 2.
+
+17
+00:02:12,000 --> 00:02:16,000
+So YYY = SHLC.
+
+18
+00:02:16,000 --> 00:02:29,000
+Note that we use the constant version of the SHL operation since the amount to shift is given by a constant in our instruction rather than being read from another register.
+
+19
+00:02:29,000 --> 00:02:41,000
+The next instruction is provided for us and it adds R0 which equals 2*c to R1 which equals c in order to produce 3*c.
+
+20
+00:02:41,000 --> 00:02:45,000
+This intermediate result is then stored back into R0.
+
+21
+00:02:45,000 --> 00:02:50,000
+Next we want to once again get the value of a variable from memory.
+
+22
+00:02:50,000 --> 00:02:58,000
+As we saw before, XXX = LD in order to load the contents of address b into register R1.
+
+23
+00:02:58,000 --> 00:03:10,000
+We are almost done, we now just need to add R1 = b to R0 = 3*c and then store the result back into memory variable a.
+
+24
+00:03:10,000 --> 00:03:21,000
+Since the store instruction is using R0 as its source, that means that ZZZ must also be R0 so that the correct value ends up in variable a.
+
+25
+00:03:21,000 --> 00:03:28,000
+Next, we will take a look at how a conditional statement would be compiled into assembly language.
+
+26
+00:03:28,000 --> 00:03:35,000
+The statement says that if a is greater than b then c should be assigned the value 17.
+
+27
+00:03:35,000 --> 00:03:42,000
+Once again we are given the semi-complete translation of the high level language code into beta assembly.
+
+28
+00:03:42,000 --> 00:03:51,000
+For this example, we first load the values of our variables a and b into temporary registers R0 and R1.
+
+29
+00:03:51,000 --> 00:03:58,000
+Now we want to check if a is greater than b and if so set c = 17.
+
+30
+00:03:58,000 --> 00:04:03,000
+We know that XXX must be some kind of beta comparison operation.
+
+31
+00:04:03,000 --> 00:04:15,000
+However, the beta does not provide a compare greater than operation, so instead we need to make use of the compare less than (CMPLT) or compare less than or equal (CMPLE) operations.
+
+32
+00:04:15,000 --> 00:04:27,000
+Since we see that the store into label c is skipped when the code branches to label _L2, we want to make sure that the branch is not taken when a is greater than b.
+
+33
+00:04:27,000 --> 00:04:32,000
+This is equivalent to the branch being taken when a is less than or equal to b.
+
+34
+00:04:32,000 --> 00:04:48,000
+So if we make XXX = CMPLE of R0, which equals a, and R1, which equals b, then the result stored into R0 will be 1 if a <= b.
+
+35
+00:04:48,000 --> 00:05:00,000
+We then set YYY to R0 to ensure that we take the branch when a <= b and we make the assignment to c when a > b.
+
+36
+00:05:00,000 --> 00:05:15,000
+Finally, if we set ZZZ = 17, then when the branch is not taken, we will move 17 into R0 and then store that value into the location pointed to by address c.
+
+37
+00:05:15,000 --> 00:05:22,000
+So the complete translation of this conditional statement to beta assembly is shown here.
+
+38
+00:05:22,000 --> 00:05:32,000
+For this next code segment, we are going to take a look at how a compiler would convert array accesses into beta code.
+
+39
+00:05:32,000 --> 00:05:42,000
+Once again we are given partially completed assembly code to help us understand how the compiler translates this high level code into beta assembly.
+
+40
+00:05:42,000 --> 00:05:48,000
+We begin with a load of the value stored at location i into register R0.
+
+41
+00:05:48,000 --> 00:05:51,000
+I is the index into our array.
+
+42
+00:05:51,000 --> 00:06:00,000
+However, since the beta is byte addressed, but it deals with 32 bit values, that means that each array element requires 4 bytes of storage.
+
+43
+00:06:00,000 --> 00:06:06,000
+So in order to point to the correct location in memory, we need to multiply i by 4.
+
+44
+00:06:06,000 --> 00:06:19,000
+As we saw earlier, shifting to the left by 1 bit is equivalent to multiplying by 2, so here we shift to the left by 2 bits in order to multiply by 4.
+
+45
+00:06:19,000 --> 00:06:22,000
+So XXX = 2.
+
+46
+00:06:22,000 --> 00:06:35,000
+Now that R0 = 4 * i, in order to load a[i], we would load the location a + 4*i.
+
+47
+00:06:35,000 --> 00:06:47,000
+In order to load a[i-1], we need to load the location that is 4 bytes before that, so location a + 4*i -- 4.
+
+48
+00:06:47,000 --> 00:06:58,000
+This means that in this load operation which actually wants to load a[i-1], we need to set YYY = a-4.
+
+49
+00:06:58,000 --> 00:07:06,000
+So this load operation places array element a[i-1] into R1.
+
+50
+00:07:06,000 --> 00:07:18,000
+Now we want to store the contents of R1 into array element a[i] which is located at address a + 4*i.
+
+51
+00:07:18,000 --> 00:07:26,000
+Since R0 already equals 4*i, then adding a to R0 will give us the desired destination address of our store.
+
+52
+00:07:26,000 --> 00:07:35,000
+This means that we just need to set ZZZ to R1 since that is the value that we want to store into a[i].
+
+53
+00:07:35,000 --> 00:07:40,000
+Let's take a look at one last example.
+
+54
+00:07:40,000 --> 00:07:52,000
+Here we have a variable sum that is initialized to 0, followed by a loop that increments the value of sum by i for every value of i between 0 and 9.
+
+55
+00:07:52,000 --> 00:07:58,000
+Our partial mostly completed compiled code is shown here.
+
+56
+00:07:58,000 --> 00:08:04,000
+The first thing that the compiler does, is it initializes the two variables sum and i to 0.
+
+57
+00:08:04,000 --> 00:08:14,000
+This is done by storing the value of register R31, which is always 0 in the beta, into the locations pointed to by sum and by i.
+
+58
+00:08:14,000 --> 00:08:19,000
+_L7 is a label that indicates the beginning of our loop.
+
+59
+00:08:19,000 --> 00:08:26,000
+The first thing that needs to happen in the loop is to load the current values of sum and i from memory.
+
+60
+00:08:26,000 --> 00:08:29,000
+Next, sum should be incremented by i.
+
+61
+00:08:29,000 --> 00:08:38,000
+Since R0 is stored back into sum, we want XXX = R0 to be the destination register of the ADD.
+
+62
+00:08:38,000 --> 00:08:41,000
+Now the loop index needs to be incremented.
+
+63
+00:08:41,000 --> 00:08:50,000
+Since R1 = i, that means that we want to increment R1 by 1,so YYY = R1.
+
+64
+00:08:50,000 --> 00:08:56,000
+Finally, we need to determine whether the loop needs to be repeated or we are done.
+
+65
+00:08:56,000 --> 00:09:00,000
+This is done by checking whether i is less than 10.
+
+66
+00:09:00,000 --> 00:09:04,000
+The beta provides the CMPLTC operation to do just that.
+
+67
+00:09:04,000 --> 00:09:13,000
+Since R1 holds the latest value of i, comparing R1 to the constant 10 will produce the result we want in R0.
+
+68
+00:09:13,000 --> 00:09:17,000
+So ZZZ = 10.
+
+69
+00:09:17,000 --> 00:09:24,000
+If the comparison was true, then we need to repeat the loop so we branch back to _L7.
+
+70
+00:09:24,000 --> 00:09:29,000
+If not, we proceed to the instruction after the branch.
+

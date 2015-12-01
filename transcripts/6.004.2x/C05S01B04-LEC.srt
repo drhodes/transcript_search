@@ -1,0 +1,120 @@
+0
+00:00:00,000 --> 00:00:03,000
+Now let's turn our attention compile_statement.
+
+1
+00:00:03,000 --> 00:00:06,000
+The first two statement types are pretty easy to handle.
+
+2
+00:00:06,000 --> 00:00:11,000
+Unconditional statements are usually assignment expressions or procedure calls.
+
+3
+00:00:11,000 --> 00:00:15,000
+We'll simply ask compile_expr to generate the appropriate code.
+
+4
+00:00:15,000 --> 00:00:18,000
+Compound statements are equally easy.
+
+5
+00:00:18,000 --> 00:02:24,000
+We'll recursively call compile_statement to generate code for each statement in turn.
+
+6
+00:02:24,000 --> 00:00:28,000
+The code for statement_2 will immediately follow the code generated for statement_1.
+
+7
+00:00:28,000 --> 00:00:33,000
+Execution will proceed sequentially through the code for each statement.
+
+8
+00:00:33,000 --> 00:00:48,000
+Here we see the simplest form the conditional statement, where we need to generate code to evaluate the test expression and then, if the value in the register is FALSE, skip over the code that executes the statement in the THEN clause.
+
+9
+00:00:48,000 --> 00:00:57,000
+The simple assembly-language template uses recursive calls to compile_expr and compile_statement to generate code for the various parts of the IF statement.
+
+10
+00:00:57,000 --> 00:01:05,000
+The full-blown conditional statement includes an ELSE clause, which should be executed if the value of the test expression is FALSE.
+
+11
+00:01:05,000 --> 00:01:11,000
+The template uses some branches and labels to ensure the course of execution is as intended.
+
+12
+00:01:11,000 --> 00:01:29,000
+You can see that the compilation process is really just the application of many small templates that break the code generation task down step-by-step into smaller and smaller tasks, generating the necessary code to glue all the pieces together in the appropriate fashion.
+
+13
+00:01:29,000 --> 00:01:42,000
+And here's the template for the WHILE statement, which looks a lot like the template for the IF statement with a branch at the end that causes the generated code to be re-executed until the value of the test expression is FALSE.
+
+14
+00:01:42,000 --> 00:01:46,000
+With a bit of thought, we can improve on this template slightly.
+
+15
+00:01:46,000 --> 00:01:59,000
+We've reorganized the code so that only a single branch instruction (BT) is executed each iteration, instead of the two branches (BF, BR) per iteration in the original template.
+
+16
+00:01:59,000 --> 00:02:07,000
+Not a big deal, but little optimizations to code inside a loop can add up to big savings in a long-running program.
+
+17
+00:02:07,000 --> 00:02:12,000
+Just a quick comment about another common iteration statement, the FOR loop.
+
+18
+00:02:12,000 --> 00:02:26,000
+The FOR loop is a shorthand way of expressing iterations where the loop index ("i" in the example shown) is run through a sequence of values and the body of the FOR loop is executed once for each value of the loop index.
+
+19
+00:02:26,000 --> 00:02:34,000
+The FOR loop can be transformed into the WHILE statement shown here, which can then be compiled using the templates shown above.
+
+20
+00:02:34,000 --> 00:02:43,000
+In this example, we've applied our templates to generate code for the iterative implementation of the factorial function that we've seen before.
+
+21
+00:02:43,000 --> 00:02:51,000
+Look through the generated code and you'll be able to match the code fragments with the templates from last couple of slides.
+
+22
+00:02:51,000 --> 00:02:59,000
+It's not the most efficient code, but not bad given the simplicity of the recursive-descent approach for compiling high-level programs.
+
+23
+00:02:59,000 --> 00:03:09,000
+It's a simple matter to modify the recursive-descent process to accommodate variable values that are stored in dedicated registers rather than in main memory.
+
+24
+00:03:09,000 --> 00:03:20,000
+Optimizing compilers are quite good at identifying opportunities to keep values in registers and hence avoid the LD and ST operations needed to access values in main memory.
+
+25
+00:03:20,000 --> 00:03:28,000
+Using this simple optimization, the number of instructions in the loop has gone from 10 down to 4.
+
+26
+00:03:28,000 --> 00:03:30,000
+Now the generated code is looking pretty good!
+
+27
+00:03:30,000 --> 00:03:36,000
+But rather than keep tweaking the recursive-descent approach, let's stop here.
+
+28
+00:03:36,000 --> 00:03:41,000
+In the next segment, we'll see how modern compilers take a more general approach to generating code.
+
+29
+00:03:41,000 --> 00:03:52,000
+Still though, the first time I learned about recursive descent, I ran home to write a simple implementation and marveled at having authored my own compiler in an afternoon!
+

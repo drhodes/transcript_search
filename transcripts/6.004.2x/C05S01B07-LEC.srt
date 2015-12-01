@@ -1,0 +1,308 @@
+0
+00:00:00,000 --> 00:00:09,000
+The syntax tree is a useful intermediate representation (IR) that is independent of both the source language and the target ISA.
+
+1
+00:00:09,000 --> 00:00:17,000
+It contains information about the sequencing and grouping of operations that isn't apparent in individual machine language instructions.
+
+2
+00:00:17,000 --> 00:00:24,000
+And it allows frontends for different source languages to share a common backend targeting a specific ISA.
+
+3
+00:00:24,000 --> 00:00:29,000
+As we'll see, the backend processing can be split into two sub-phases.
+
+4
+00:00:29,000 --> 00:00:35,000
+The first performs machine-independent optimizations on the IR.
+
+5
+00:00:35,000 --> 00:00:45,000
+The optimized IR is then translated by the code generation phase into sequences of instructions for the target ISA.
+
+6
+00:00:45,000 --> 00:00:53,000
+A common IR is to reorganize the syntax tree into what's called a control flow graph (CFG).
+
+7
+00:00:53,000 --> 00:00:59,000
+Each node in the graph is a sequence of assignment and expression evaluations that ends with a branch.
+
+8
+00:00:59,000 --> 00:01:06,000
+The nodes are called "basic blocks" and represent sequences of operations that are executed as a unit.
+
+9
+00:01:06,000 --> 00:01:15,000
+Once the first operation in a basic block is performed, the remaining operations will also be performed without any other intervening operations.
+
+10
+00:01:15,000 --> 00:01:32,000
+This knowledge lets us consider many optimizations, e.g., temporarily storing variable values in registers, that would be complicated if there was the possibility that other operations outside the block might also need to access the variable values while we were in the middle of this block.
+
+11
+00:01:32,000 --> 00:01:39,000
+The edges of the graph indicate the branches that take us to another basic block.
+
+12
+00:01:39,000 --> 00:01:43,000
+For example, here's the CFG for GCD.
+
+13
+00:01:43,000 --> 00:01:54,000
+If a basic block ends with a conditional branch, there are two edges, labeled "T" and "F" leaving the block that indicate the next block to execute depending on the outcome of the test.
+
+14
+00:01:54,000 --> 00:02:03,000
+Other blocks have only a single departing arrow, indicating that the block always transfers control to the block indicated by the arrow.
+
+15
+00:02:03,000 --> 00:02:15,000
+Note that if we can arrive at a block from only a single predecessor block, then any knowledge we have about operations and variables from the predecessor block can be carried over to the destination block.
+
+16
+00:02:15,000 --> 00:02:32,000
+For example, if the "if (x > y)" block has generated code to load the values of x and y into registers, both destination blocks can use that information and use the appropriate registers without having to generate their own LDs.
+
+17
+00:02:32,000 --> 00:02:38,000
+But if a block has multiple predecessors, such optimizations are more constrained.
+
+18
+00:02:38,000 --> 00:02:42,000
+We can only use knowledge that is common to *all* the predecessor blocks.
+
+19
+00:02:42,000 --> 00:02:48,000
+The CFG looks a lot like the state transition diagram for a high-level FSM!
+
+20
+00:02:48,000 --> 00:02:55,000
+We'll optimize the IR by performing multiple passes over the CFG.
+
+21
+00:02:55,000 --> 00:03:00,000
+Each pass performs a specific, simple optimization.
+
+22
+00:03:00,000 --> 00:03:08,000
+We'll repeatedly apply the simple optimizations in multiple passes, until we can't find any further optimizations to perform.
+
+23
+00:03:08,000 --> 00:03:14,000
+Collectively, the simple optimizations can combine to achieve very complex optimizations.
+
+24
+00:03:14,000 --> 00:03:17,000
+Here are some example optimizations:
+
+25
+00:03:17,000 --> 00:03:23,000
+We can eliminate assignments to variables that are never used and basic blocks that are never reached.
+
+26
+00:03:23,000 --> 00:03:26,000
+This is called "dead code elimination".
+
+27
+00:03:26,000 --> 00:03:35,000
+In constant propagation, we identify variables that have a constant value and substitute that constant in place of references to the variable.
+
+28
+00:03:35,000 --> 00:03:39,000
+We can compute the value of expressions that have constant operands.
+
+29
+00:03:39,000 --> 00:03:41,000
+This is called "constant folding".
+
+30
+00:03:41,000 --> 00:03:49,000
+To illustrate how these optimizations work, consider this slightly silly source program and its CFG.
+
+31
+00:03:49,000 --> 00:04:00,000
+Note that we've broken down complicated expressions into simple binary operations, using temporary variable names (e.g, "_t1") to name the intermediate results.
+
+32
+00:04:00,000 --> 00:04:02,000
+Let's get started!
+
+33
+00:04:02,000 --> 00:04:13,000
+The dead code elimination pass can remove the assignment to Z in the first basic block since Z is reassigned in subsequent blocks and the intervening code makes no reference to Z.
+
+34
+00:04:13,000 --> 00:04:17,000
+Next we look for variables with constant values.
+
+35
+00:04:17,000 --> 00:04:26,000
+Here we find that X is assigned the value of 3 and is never re-assigned, so we can replace all references to X with the constant 3.
+
+36
+00:04:26,000 --> 00:04:32,000
+Now perform constant folding [CLICK], evaluating any constant expressions.
+
+37
+00:04:32,000 --> 00:04:38,000
+Here's the updated CFG, ready for another round of optimizations.
+
+38
+00:04:38,000 --> 00:04:40,000
+First dead code elimination.
+
+39
+00:04:40,000 --> 00:04:43,000
+Then constant propagation.
+
+40
+00:04:43,000 --> 00:04:46,000
+And, finally, constant folding.
+
+41
+00:04:46,000 --> 00:04:52,000
+So after two rounds of these simple operations, we've thinned out a number of assignments.
+
+42
+00:04:52,000 --> 00:04:54,000
+On to round three!
+
+43
+00:04:54,000 --> 00:04:56,000
+Dead code elimination.
+
+44
+00:04:56,000 --> 00:05:07,000
+And here we can determine the outcome of a conditional branch, eliminating entire basic blocks from the IR, either because they're now empty or because they can no longer be reached.
+
+45
+00:05:07,000 --> 00:05:12,000
+Wow, the IR is now considerably smaller.
+
+46
+00:05:12,000 --> 00:05:17,000
+Next is another application of constant propagation.
+
+47
+00:05:17,000 --> 00:05:19,000
+And then constant folding.
+
+48
+00:05:19,000 --> 00:05:23,000
+Followed by more dead code elimination.
+
+49
+00:05:23,000 --> 00:05:29,000
+The passes continue until we discover there are no further optimizations to perform, so we're done!
+
+50
+00:05:29,000 --> 00:05:39,000
+Repeated applications of these simple transformations have transformed the original program into an equivalent program that computes the same final value for Z.
+
+51
+00:05:39,000 --> 00:05:50,000
+We can do more optimizations by adding passes: eliminating redundant computation of common subexpressions, moving loop-independent calculations out of loops,
+
+52
+00:05:50,000 --> 00:06:00,000
+unrolling short loops to perform the effect of, say, two iterations in a single loop execution, saving some of the cost of increment and test instructions.
+
+53
+00:06:00,000 --> 00:06:08,000
+Optimizing compilers have a sophisticated set of optimizations they employ to make smaller and more efficient code.
+
+54
+00:06:08,000 --> 00:06:11,000
+Okay, we're done with optimizations.
+
+55
+00:06:11,000 --> 00:06:14,000
+Now it's time to generate instructions for the target ISA.
+
+56
+00:06:14,000 --> 00:06:19,000
+First the code generator assigns each variable a dedicated register.
+
+57
+00:06:19,000 --> 00:06:26,000
+If we have more variables than registers, some variables are stored in memory and we'll use LD and ST to access them as needed.
+
+58
+00:06:26,000 --> 00:06:31,000
+But frequently-used variables will almost certainly live as much as possible in registers.
+
+59
+00:06:31,000 --> 00:06:38,000
+Use our templates from before to translate each assignment and operation into one or more instructions.
+
+60
+00:06:38,000 --> 00:06:43,000
+The emit the code for each block, adding the appropriate labels and branches.
+
+61
+00:06:43,000 --> 00:06:49,000
+Reorder the basic block code to eliminate unconditional branches wherever possible.
+
+62
+00:06:49,000 --> 00:06:54,000
+And finally perform any target-specific peephole optimizations.
+
+63
+00:06:54,000 --> 00:07:02,000
+Here's the original CFG for the GCD code, along with the slightly optimized CFG.
+
+64
+00:07:02,000 --> 00:07:09,000
+GCD isn't as trivial as the previous example, so we've only been able to do a bit of constant propagation and constant folding.
+
+65
+00:07:09,000 --> 00:07:19,000
+Note that we can't propagate knowledge about variable values from the top basic block to the following "if" block since the "if" block has multiple predecessors.
+
+66
+00:07:19,000 --> 00:07:25,000
+Here's how the code generator will process the optimized CFG.
+
+67
+00:07:25,000 --> 00:07:29,000
+First, it dedicates registers to hold the values for x and y.
+
+68
+00:07:29,000 --> 00:07:32,000
+Then, it emits the code for each of the basic blocks.
+
+69
+00:07:32,000 --> 00:07:38,000
+Next, reorganize the order of the basic blocks to eliminate unconditional branches wherever possible.
+
+70
+00:07:38,000 --> 00:07:42,000
+The resulting code is pretty good.
+
+71
+00:07:42,000 --> 00:07:47,000
+There no obvious changes that a human programmer might make to make the code faster or smaller.
+
+72
+00:07:47,000 --> 00:07:48,000
+Good job, compiler!
+
+73
+00:07:48,000 --> 00:07:56,000
+Here are all the compilation steps shown in order, along with their input and output data structures.
+
+74
+00:07:56,000 --> 00:08:01,000
+Collectively they transform the original source code into high-quality assembly code.
+
+75
+00:08:01,000 --> 00:08:09,000
+The patient application of optimization passes often produces code that's more efficient than writing assembly language by hand.
+
+76
+00:08:09,000 --> 00:08:22,000
+Nowadays, programmers are able to focus on getting the source code to achieve the desired functionality and leave the details of translation to instructions in the hands of the compiler.
+

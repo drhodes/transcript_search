@@ -1,0 +1,204 @@
+0
+00:00:00,000 --> 00:00:08,000
+Let's practice our newfound skill and see what we can determine about a running program which we've stopped somewhere in the middle of its execution.
+
+1
+00:00:08,000 --> 00:00:17,000
+We're told that a computation of fact() is in progress and that the PC of the next instruction to be executed is 0x40.
+
+2
+00:00:17,000 --> 00:00:20,000
+We're also given the stack dump shown on right.
+
+3
+00:00:20,000 --> 00:00:29,000
+Since we're in the middle of a fact computation, we know that current stack frame (and possibly others) is an activation record for the fact function.
+
+4
+00:00:29,000 --> 00:00:39,000
+Using the code on the previous slide we can determine the layout of the stack frame and generate the annotations shown on the right of the stack dump.
+
+5
+00:00:39,000 --> 00:00:48,000
+With the annotations, it's easy to see that the argument to current active call is the value 3.
+
+6
+00:00:48,000 --> 00:00:52,000
+Now we want to know the argument to original call to fact.
+
+7
+00:00:52,000 --> 00:00:57,000
+We'll have to label the other stack frames using the saved BP values.
+
+8
+00:00:57,000 --> 00:01:12,000
+Looking at the saved LP values for each frame (always found at an offset of -8 from the frame's BP), we see that many of the saved values are 0x40, which must be the return address for the recursive fact calls.
+
+9
+00:01:12,000 --> 00:01:23,000
+Looking through the stack frames we find the first return address that's *not* 0x40, which must an return address to code that's not part of the fact procedure.
+
+10
+00:01:23,000 --> 00:01:32,000
+This means we've found the stack frame created by the original call to fact and can see that argument to the original call is 6.
+
+11
+00:01:32,000 --> 00:01:36,000
+What's the location of the BR that made the original call?
+
+12
+00:01:36,000 --> 00:01:43,000
+Well, the saved LP in the stack frame of the original call to fact is 0x80.
+
+13
+00:01:43,000 --> 00:01:54,000
+That's the address of the instruction following the original call, so the BR that made the original call is one instruction earlier, at location 0x7C.
+
+14
+00:01:54,000 --> 00:01:58,000
+To answer these questions you have to be good at hex arithmetic!
+
+15
+00:01:58,000 --> 00:02:02,000
+What instruction is about to be executed?
+
+16
+00:02:02,000 --> 00:02:10,000
+We were told its address is 0x40, which we notice is the saved LP value for all the recursive fact calls.
+
+17
+00:02:10,000 --> 00:02:17,000
+So 0x40 must be the address of the instruction following the BR(fact,LP) instruction in the fact code.
+
+18
+00:02:17,000 --> 00:02:24,000
+Looking back a few slides at the fact code, we see that's a DEALLOCATE(1) instruction.
+
+19
+00:02:24,000 --> 00:02:27,000
+What value is in BP?
+
+20
+00:02:27,000 --> 00:02:35,000
+Hmm.  We know BP is the address of the stack location containing the saved R1 value in the current stack frame.
+
+21
+00:02:35,000 --> 00:02:44,000
+So the saved BP value in the current stack frame is the address of the saved R1 value in the *previous* stack frame.
+
+22
+00:02:44,000 --> 00:02:53,000
+So the saved BP value gives us the address of a particular stack location, from which we can derive the address of all the other locations!
+
+23
+00:02:53,000 --> 00:02:59,000
+Counting forward, we find that the value in BP must be 0x13C.
+
+24
+00:02:59,000 --> 00:03:02,000
+What value is in SP?
+
+25
+00:03:02,000 --> 00:03:13,000
+Since we're about to execute the DEALLOCATE to remove the argument of the nested call from the stack, that argument must still be on the stack right after the saved R1 value.
+
+26
+00:03:13,000 --> 00:03:23,000
+Since the SP points to first unused stack location, it points to the location after that word, so it has the value 0x144.
+
+27
+00:03:23,000 --> 00:03:27,000
+Finally, what value is in R0?
+
+28
+00:03:27,000 --> 00:03:26,000
+Since we've just returned from a call to fact(2) the value in R0 must the result from that recursive call, which is 2.
+
+29
+00:03:26,000 --> 00:03:42,000
+Wow!  You can learn a lot from the stacked activation records and a little deduction!
+
+30
+00:03:42,000 --> 00:03:55,000
+Since the state of the computation is represented by the values of the PC, the registers, and main memory, once we're given that information we can tell exactly what the program has been up to.
+
+31
+00:03:55,000 --> 00:03:56,000
+Pretty neat...
+
+32
+00:03:56,000 --> 00:04:02,000
+Wrapping up, we've been dedicating some registers to help with our various software conventions.
+
+33
+00:04:02,000 --> 00:04:04,000
+To summarize:
+
+34
+00:04:04,000 --> 00:04:08,000
+R31 is always zero, as defined by the ISA.
+
+35
+00:04:08,000 --> 00:04:16,000
+We'll also dedicate R30 to a particular function in the ISA when we discuss the implementation of the Beta in the next lecture.
+
+36
+00:04:16,000 --> 00:04:20,000
+Meanwhile, don't use R30 in your code!
+
+37
+00:04:20,000 --> 00:04:25,000
+The remaining dedicated registers are connected with our software conventions:
+
+38
+00:04:25,000 --> 00:04:30,000
+R29 (SP) is used as the stack pointer,
+
+39
+00:04:30,000 --> 00:04:34,000
+R28 (LP) is used as the linkage pointer, and
+
+40
+00:04:34,000 --> 00:04:39,000
+R27 (BP) is used as the base pointer.
+
+41
+00:04:39,000 --> 00:04:44,000
+As you practice reading and writing code, you'll grow familiar with these dedicated registers.
+
+42
+00:04:44,000 --> 00:04:57,000
+In thinking about how to implement procedures, we discovered the need for an activation record to store the information needed by any active procedure call.
+
+43
+00:04:57,000 --> 00:05:02,000
+An activation record is created by the caller and callee at the start of a procedure call.
+
+44
+00:05:02,000 --> 00:05:06,000
+And the record can be discarded when the procedure is complete.
+
+45
+00:05:06,000 --> 00:05:16,000
+The activation records hold argument values, saved LP and BP values along with the caller's values in any other of the registers.
+
+46
+00:05:16,000 --> 00:05:22,000
+Storage for the procedure's local variables is also allocated in the activation record.
+
+47
+00:05:22,000 --> 00:05:30,000
+We use BP to point to the current activation record, giving easy access the values of the arguments and local variables.
+
+48
+00:05:30,000 --> 00:05:41,000
+We adopted a "callee saves" convention where the called procedure is obligated to preserve the values in all registers except for R0.
+
+49
+00:05:41,000 --> 00:05:51,000
+Taken together, these conventions allow us to have procedures with arbitrary numbers of arguments and local variables, with nested and recursive procedure calls.
+
+50
+00:05:51,000 --> 00:05:56,000
+We're now ready to compile and execute any C program!
+

@@ -1,0 +1,276 @@
+0
+00:00:00,000 --> 00:00:08,000
+The problem we need to solve is where to store the values needed by procedure: its arguments, its return address, its return value.
+
+1
+00:00:08,000 --> 00:00:17,000
+The procedure may also need storage for its local variables and space to save the values of the caller's registers before they get overwritten by the procedure.
+
+2
+00:00:17,000 --> 00:00:23,000
+We'd like to avoid any limitations on the number of arguments, the number of local variables, etc.
+
+3
+00:00:23,000 --> 00:00:31,000
+So we'll need a block of storage for each active procedure call, what we'll call the "activation record".
+
+4
+00:00:31,000 --> 00:00:43,000
+As we saw in the factorial example, we can't statically allocate a single block of storage for a particular procedure since recursive calls mean we'll have many active calls to that procedure at points during the execution.
+
+5
+00:00:43,000 --> 00:00:54,000
+What we need is a way to dynamically allocate storage for an activation record when the procedure is called, which can then be reclaimed when the procedure returns.
+
+6
+00:00:54,000 --> 00:00:59,000
+Let's see how activation records come and go as execution proceeds.
+
+7
+00:00:59,000 --> 00:01:03,000
+The first activation record is for the call fact(3).
+
+8
+00:01:03,000 --> 00:01:15,000
+It's created at the beginning of the procedure and holds, among other things, the value of the argument n and the return address where execution should resume after the fact(3) computation is complete.
+
+9
+00:01:15,000 --> 00:01:21,000
+During the execution of fact(3), we need to make a recursive call to compute fact(2).
+
+10
+00:01:21,000 --> 00:01:29,000
+So that procedure call also gets an activation record with the appropriate values for the argument and return address.
+
+11
+00:01:29,000 --> 00:01:40,000
+Note that the original activation record is kept since it contains information needed to complete the computation of fact(3) after the call to fact(2) returns.
+
+12
+00:01:40,000 --> 00:01:45,000
+So now we have two active procedure calls and hence two activation records.
+
+13
+00:01:45,000 --> 00:01:52,000
+fact(2) requires computing fact(1), which, in turn, requires computing fact(0).
+
+14
+00:01:52,000 --> 00:01:48,000
+At this point there are four active procedure calls and hence four activation records.
+
+15
+00:01:48,000 --> 00:02:04,000
+The recursion terminates with fact(0), which returns the value 1 to its caller.
+
+16
+00:02:04,000 --> 00:02:12,000
+At this point we've finished execution of fact(0) and so its activation record is no longer needed and can be discarded.
+
+17
+00:02:12,000 --> 00:02:17,000
+fact(1) now finishes its computation returning 1 to its caller.
+
+18
+00:02:17,000 --> 00:02:20,000
+We no longer need its activation record.
+
+19
+00:02:20,000 --> 00:02:26,000
+Then fact(2) completes, returning 2 to its caller and its activation record can be discarded.
+
+20
+00:02:26,000 --> 00:02:27,000
+And so on...
+
+21
+00:02:27,000 --> 00:02:35,000
+Note that the activation record of a nested procedure call is always discarded before the activation record of the caller.
+
+22
+00:02:35,000 --> 00:02:42,000
+That makes sense: the execution of the caller can't complete until the nested procedure call returns.
+
+23
+00:02:42,000 --> 00:02:50,000
+What we need is a storage scheme that efficiently supports the allocation and deallocation of activation records as shown here.
+
+24
+00:02:50,000 --> 00:02:58,000
+Early compiler writers recognized that activation records are allocated and deallocated in last-in first-out (LIFO) order.
+
+25
+00:02:58,000 --> 00:03:08,000
+So they invented the "stack", a data structure that implements a PUSH operation to add a record to the top of the stack and a POP operation to remove the top element.
+
+26
+00:03:08,000 --> 00:03:16,000
+New activation records are PUSHed onto the stack during procedure calls and the POPed from the stack when the procedure call returns.
+
+27
+00:03:16,000 --> 00:03:23,000
+Note that stack operations affect the top (i.e., most recent) record on the stack.
+
+28
+00:03:23,000 --> 00:03:27,000
+C procedures only need to access the top activation record on the stack.
+
+29
+00:03:27,000 --> 00:03:33,000
+Other programming languages, e.g. Java, support accesses to other active activation records.
+
+30
+00:03:33,000 --> 00:03:36,000
+The stack supports both modes of operation.
+
+31
+00:03:36,000 --> 00:03:54,000
+One final technical note: some programming languages support closures (e.g., Javascript) or continuations (e.g., Python's yield statement), where the activation records need to be preserved even after the procedure returns.
+
+32
+00:03:54,000 --> 00:04:04,000
+In these cases, the simple LIFO behavior of the stack is no longer sufficient and we'll need another scheme for allocating and deallocating activation records.
+
+33
+00:04:04,000 --> 00:04:06,000
+But that's a topic for another course!
+
+34
+00:04:06,000 --> 00:05:09,000
+Here's how we'll implement the stack on the Beta:
+
+35
+00:05:09,000 --> 00:04:17,000
+We'll dedicate one of the Beta registers, R29, to be the "stack pointer" that will be used to manage stack operations.
+
+36
+00:04:17,000 --> 00:04:22,000
+When we PUSH a word onto the stack, we'll increment the stack pointer.
+
+37
+00:04:22,000 --> 00:04:27,000
+So the stack grows to successively higher addresses as words are PUSHed onto the stack.
+
+38
+00:04:27,000 --> 00:04:40,000
+We'll adopt the convention that SP points to (i.e., its value is the address of) the first unused stack location, the location that will be filled by next PUSH.
+
+39
+00:04:40,000 --> 00:04:47,000
+So locations with addresses lower than the value in SP correspond to words that have been previously allocated.
+
+40
+00:04:47,000 --> 00:05:00,000
+Words can be PUSHed to or POPed from the stack at any point in execution, but we'll impose the rule that code sequences that PUSH words onto the stack must POP those words at the end of execution.
+
+41
+00:05:00,000 --> 00:05:07,000
+So when a code sequence finishes execution, SP will have the same value as it had before the sequence started.
+
+42
+00:05:07,000 --> 00:05:16,000
+This is called the "stack discipline" and ensures that intervening uses of the stack don't affect later stack references.
+
+43
+00:05:16,000 --> 00:05:25,000
+We'll allocate a large region of memory to hold the stack located so that the stack can grow without overwriting other program storage.
+
+44
+00:05:25,000 --> 00:05:36,000
+Most systems require that you specify a maximum stack size when running a program and will signal an execution error if the program attempts to PUSH too many items onto the stack.
+
+45
+00:05:36,000 --> 00:05:46,000
+For our Beta stack implementation, we'll use existing instructions to implement stack operations, so for us the stack is strictly a set of software conventions.
+
+46
+00:05:46,000 --> 00:05:53,000
+Other ISAs provide instructions specifically for stack operations.
+
+47
+00:05:53,000 --> 00:06:03,000
+There are many other sensible stack conventions, so you'll need to read up on the conventions adopted by the particular ISA or programming language you'll be using.
+
+48
+00:06:03,000 --> 00:06:08,000
+We've added some convenience macros to UASM to support stacks.
+
+49
+00:06:08,000 --> 00:06:12,000
+The PUSH macro expands into two instructions.
+
+50
+00:06:12,000 --> 00:06:23,000
+The ADDC increments the stack pointer, allocating a new word at the top of stack, and then initializes the new top-of-stack from a specified register value with a ST instruction.
+
+51
+00:06:23,000 --> 00:06:35,000
+The POP macro LDs the value at the top of the stack into the specified register, then uses a SUBC instruction to decrement the stack pointer, deallocating that word from the stack.
+
+52
+00:06:35,000 --> 00:06:41,000
+Note that the order of the instructions in the PUSH and POP macro is very important.
+
+53
+00:06:41,000 --> 00:06:52,000
+As we'll see in the next lecture, interrupts can cause the Beta hardware to stop executing the current program between any two instructions, so we have to be careful about the order of operations.
+
+54
+00:06:52,000 --> 00:06:58,000
+So for PUSH, we first allocate the word on the stack, then initialize it.
+
+55
+00:06:58,000 --> 00:07:11,000
+If we did it the other way around and execution was interrupted between the initialization and allocation, code run during the interrupt which uses the stack might unintentionally overwrite the initialized value.
+
+56
+00:07:11,000 --> 00:07:19,000
+But, assuming all code follows stack discipline, allocation followed by initialization is always safe.
+
+57
+00:07:19,000 --> 00:07:22,000
+The same reasoning applies to the order of the POP instructions.
+
+58
+00:07:22,000 --> 00:07:30,000
+We first access the top-of-stack one last time to retrieve its value, then we deallocate that location.
+
+59
+00:07:30,000 --> 00:07:36,000
+We can use the ALLOCATE macro to reserve a number of stack locations for later use.
+
+60
+00:07:36,000 --> 00:07:40,000
+Sort of like PUSH but without the initialization.
+
+61
+00:07:40,000 --> 00:07:46,000
+DEALLOCATE performs the opposite operation, removing N words from the stack.
+
+62
+00:07:46,000 --> 00:07:58,000
+In general, if we see a PUSH or ALLOCATE in an assembly language program, we should be able to find the corresponding POP or DEALLOCATE, which would indicate that stack discipline is maintained.
+
+63
+00:07:58,000 --> 00:08:01,000
+We'll use stacks to save values we'll need later.
+
+64
+00:08:01,000 --> 00:08:09,000
+For example, if we need to use some registers for a computation but don't know if the register's current values are needed later in the program,
+
+65
+00:08:09,000 --> 00:08:15,000
+we can PUSH their current values onto the stack and then are free to use the registers in our code.
+
+66
+00:08:15,000 --> 00:08:20,000
+After we're done, we can use POP to restore the saved values.
+
+67
+00:08:20,000 --> 00:08:32,000
+Note that we POP data off the stack in the opposite order that the data was PUSHed, i.e., we need to follow the last-in first-out discipline imposed by the stack operations.
+
+68
+00:08:32,000 --> 00:08:40,000
+Now that we have the stack data structure, we'll use it to solve our problems with allocating and deallocating activation records during procedure calls.
+

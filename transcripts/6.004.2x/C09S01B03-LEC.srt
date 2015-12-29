@@ -1,0 +1,144 @@
+0
+00:00:00,000 --> 00:00:03,000
+The LD and ST instructions access main memory.
+
+1
+00:00:03,000 --> 00:00:13,000
+Note that its the same main memory that holds the instructions, even though for drafting convenience we show it has two separate boxes in our datapath diagram.
+
+2
+00:00:13,000 --> 00:00:17,000
+In the form we show it here, main memory has three ports:
+
+3
+00:00:17,000 --> 00:00:26,000
+two read ports for fetching instructions and reading load data, and one write port used by the ST instruction to write data into main memory.
+
+4
+00:00:26,000 --> 00:00:33,000
+The address calculation is exactly the same computation as performed by the ADDC instruction:
+
+5
+00:00:33,000 --> 00:00:41,000
+the contents of the RA register are added to the sign-extended 16-bit literal from the low-order 16 bits of the instruction.
+
+6
+00:00:41,000 --> 00:00:46,000
+So we'll simply reuse the existing datapath hardware to compute the address.
+
+7
+00:00:46,000 --> 00:00:55,000
+For the LD instruction the output of the ALU is routed to main memory as the address of the location we wish to access.
+
+8
+00:00:55,000 --> 00:01:08,000
+After the memory's propagation delay, the contents of the addressed location is returned by the memory and we need to route that back to the register file to be written into the RC register.
+
+9
+00:01:08,000 --> 00:01:18,000
+The memory has two control signals: MOE (memory output enable), which we set to 1 when we want to read a value from the memory.
+
+10
+00:01:18,000 --> 00:01:30,000
+And MWE (memory write enable) which is set to 1 when we want main memory to store the value on its write data (WD) port into the addressed memory location.
+
+11
+00:01:30,000 --> 00:01:40,000
+We need to add another MUX to select which value to write back to the register file: the output of the ALU or the data returning from main memory.
+
+12
+00:01:40,000 --> 00:01:47,000
+We've used a 3-to-1 MUX and we'll see the use for the other MUX input when we get to the implementation of branches and jumps.
+
+13
+00:01:47,000 --> 00:01:53,000
+The two-bit WDSEL signal is used to select the source of the write-back value.
+
+14
+00:01:53,000 --> 00:01:59,000
+Let's follow the flow of data when executing the LD instruction.
+
+15
+00:01:59,000 --> 00:02:07,000
+The ALU operands are chosen just as they are for the ADDC instruction and the ALU is requested to perform an ADD operation.
+
+16
+00:02:07,000 --> 00:02:15,000
+The ALU result is connected to the address port of main memory, who's control signals are set for a read operation.
+
+17
+00:02:15,000 --> 00:02:22,000
+The WDSEL control signals are set to 2 to route the returning data to the register file.
+
+18
+00:02:22,000 --> 00:02:29,000
+Execution of the ST instruction is very similar to the execution of the LD instruction, with one extra complication.
+
+19
+00:02:29,000 --> 00:02:39,000
+The value to be written to memory comes from the RC register, but the RC instruction field is not connected a register file read address.
+
+20
+00:02:39,000 --> 00:02:47,000
+Happily, the RB register address isn't being used by the ST instruction since the second ALU operand comes from the literal field.
+
+21
+00:02:47,000 --> 00:02:55,000
+So we'll use a MUX to enable the RC field to be selected as the address for the register file's second read port.
+
+22
+00:02:55,000 --> 00:03:01,000
+When the RA2SEL control signal is 0, the RB field is selected as the address.
+
+23
+00:03:01,000 --> 00:03:05,000
+When RA2SEL is 1, the RC field is selected.
+
+24
+00:03:05,000 --> 00:03:11,000
+The output from the second read data port is connected to the write data port of main memory.
+
+25
+00:03:11,000 --> 00:03:18,000
+The ST instruction is the only instruction that does not write a result into the register file.
+
+26
+00:03:18,000 --> 00:03:23,000
+So the WERF control signal will be 0 when executing ST.
+
+27
+00:03:23,000 --> 00:03:27,000
+Here's the flow of data when executing ST.
+
+28
+00:03:27,000 --> 00:03:35,000
+The operands are selected as for LD and the ALU performs the address computation with the result sent to main memory as the address.
+
+29
+00:03:35,000 --> 00:03:47,000
+Meanwhile the RC field is selected as the address for the second register file read port and the value from the RC register becomes the write data for main memory.
+
+30
+00:03:47,000 --> 00:03:56,000
+By setting the MWR control signal to 1, the main memory will write the WD data into the selected memory location at the end of the cycle.
+
+31
+00:03:56,000 --> 00:04:03,000
+The WERF control signal is set to zero since we won't be writing a value into the register file.
+
+32
+00:04:03,000 --> 00:04:08,000
+And, since we're not writing to the register file, we don't care about the value for the WDSEL signal.
+
+33
+00:04:08,000 --> 00:04:13,000
+Of course, the logic will need to supply some value for WDSEL.
+
+34
+00:04:13,000 --> 00:04:20,000
+The "don't care" annotation is telling the logic designer that she's welcome to supply whatever value is most convenient.
+
+35
+00:04:20,000 --> 00:04:33,000
+This is particularly useful when using Karnaugh maps to optimize the control logic, where the value can be chosen as either 0 or 1, whichever results in the best minimization of the logic equations.
+

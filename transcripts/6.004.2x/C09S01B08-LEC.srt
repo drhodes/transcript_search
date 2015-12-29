@@ -1,0 +1,124 @@
+0
+00:00:00,000 --> 00:00:01,000
+Okay, we're done!
+
+1
+00:00:01,000 --> 00:00:07,000
+Here's the final datapath for executing instructions and handling exceptions.
+
+2
+00:00:07,000 --> 00:00:14,000
+Please take a moment to remind yourself of what each datapath component does, i.e., why it was added to the datapath.
+
+3
+00:00:14,000 --> 00:00:20,000
+Similarly, you should understand how the control signals affect the operation of the datapath.
+
+4
+00:00:20,000 --> 00:00:26,000
+At least to my eye, this seems like a very modest amount of hardware to achieve all this functionality!
+
+5
+00:00:26,000 --> 00:00:34,000
+It's so modest in fact, that will ask you to actually complete the logic design for the Beta in an upcoming lab assignment :)
+
+6
+00:00:34,000 --> 00:00:40,000
+How does our design compare to the processor you're using to view this course online?
+
+7
+00:00:40,000 --> 00:00:46,000
+Modern processors have many additional complexities to increase performance:
+
+8
+00:00:46,000 --> 00:00:56,000
+pipelined execution, the ability to execute more than instruction per cycle, fancier memory systems to reduce average memory access time, etc.
+
+9
+00:00:56,000 --> 00:01:00,000
+We'll cover some of these enhancements in upcoming lectures.
+
+10
+00:01:00,000 --> 00:01:14,000
+The bottom line: the Beta hardware might occupy 1 or 2 sq mm on a modern integrated circuit, while a modern Intel processor occupies 300 to 600 sq mm.
+
+11
+00:01:14,000 --> 00:01:18,000
+Clearly all that extra circuitry is there for a reason!
+
+12
+00:01:18,000 --> 00:01:23,000
+If you're curious, I'd recommend taking a course on advanced processor architecture.
+
+13
+00:01:23,000 --> 00:01:33,000
+Here we've gathered up all the control signal settings for each class of instructions, including the settings needed for exceptions and during reset.
+
+14
+00:01:33,000 --> 00:01:43,000
+Wherever possible, we've specified "don't care" for control signals whose value does not affect the actions of the datapath needed for a particular instruction.
+
+15
+00:01:43,000 --> 00:01:52,000
+Note that the memory write enable signal always has a defined value, ensuring that we only write to the memory during ST instructions.
+
+16
+00:01:52,000 --> 00:02:04,000
+Similarly, the write enable for the register file is well-defined, except during RESET when presumably we're restarting the processor and don't care about preserving any register values.
+
+17
+00:02:04,000 --> 00:02:16,000
+As mentioned previously, a read-only memory (ROM) indexed by the 6-bit opcode field is the easiest way to generate the appropriate control signals for the current instruction.
+
+18
+00:02:16,000 --> 00:02:27,000
+The Z and IRQ inputs to the control logic will affect the control signals and this can be accomplished with a small amount of logic to process the ROM outputs.
+
+19
+00:02:27,000 --> 00:02:34,000
+One can always have fun with Karnuagh maps to generate a minimal implementation using ordinary logic gates.
+
+20
+00:02:34,000 --> 00:02:41,000
+The result will be much smaller, both in terms of size and propagation delay, but requires a lot more design work!
+
+21
+00:02:41,000 --> 00:02:47,000
+My recommendation: start with the ROM implementation and get everything else working.
+
+22
+00:02:47,000 --> 00:02:50,000
+Then come back later when you feel like hacking logic gates :)
+
+23
+00:02:50,000 --> 00:02:57,000
+So that's what it takes to design the hardware for a simple 32-bit computer.
+
+24
+00:02:57,000 --> 00:03:09,000
+Of course, we made the job easy for ourselves by choosing a simple binary encoding for our instructions and limiting the hardware functionality to efficiently executing the most common operations.
+
+25
+00:03:09,000 --> 00:03:14,000
+Less common and more complex functionality can be left to software.
+
+26
+00:03:14,000 --> 00:03:23,000
+The exception mechanism gave us a powerful tool for transferring control to software when the hardware couldn't handle the task.
+
+27
+00:03:23,000 --> 00:03:26,000
+Have fun completing the hardware design of your Beta.
+
+28
+00:03:26,000 --> 00:03:32,000
+Thousands of MIT students have enjoyed that "Yes!" moment when their design works for the first time.
+
+29
+00:03:32,000 --> 00:03:41,000
+For their efforts we reward them with the "Beta Inside" sticker you see here, which you can see on laptops as you walk around the Institute.
+
+30
+00:03:41,000 --> 00:03:42,000
+Good luck!
+

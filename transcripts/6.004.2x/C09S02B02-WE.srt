@@ -1,0 +1,360 @@
+0
+00:00:00,000 --> 00:00:12,000
+In order to better understand the role of each of the beta control signals, we will work through an example problem that provides us with a partially filled control table for 5 different instructions.
+
+1
+00:00:12,000 --> 00:00:19,000
+Two of these instructions are existing beta instructions that we must infer from the provided control signals.
+
+2
+00:00:19,000 --> 00:00:29,000
+The other three are three new instructions that we are adding to our beta by modifying the necessary control signals to produce the desired behavior of each of the operations.
+
+3
+00:00:29,000 --> 00:00:37,000
+The first instruction that we want to add to our beta is an LDX instruction which is a load that is double indexed.
+
+4
+00:00:37,000 --> 00:00:50,000
+What this means is that in order to produce the effective address of the load, instead of adding the contents of a register to a constant as is done in the LD instruction, we add the contents of two different registers.
+
+5
+00:00:50,000 --> 00:00:57,000
+So the address for this load operation is the result of adding together the contents of registers Ra and Rb.
+
+6
+00:00:57,000 --> 00:01:04,000
+The contents of the memory location pointed to by this effective address are loaded into register Rc.
+
+7
+00:01:04,000 --> 00:01:09,000
+Finally, the PC is incremented by 4 to point to the next instruction.
+
+8
+00:01:09,000 --> 00:01:18,000
+The second instruction that we want to add to our beta is a MVZC instruction which is a move constant if zero instruction.
+
+9
+00:01:18,000 --> 00:01:29,000
+The way this instruction works is that if the contents of register Ra equal zero, then the sign extended version of the literal constant will be loaded into register Rc.
+
+10
+00:01:29,000 --> 00:01:35,000
+This is followed by incrementing the PC to point to the next instruction.
+
+11
+00:01:35,000 --> 00:01:44,000
+The third instruction that we want to add to our beta is a STR instruction which is a store relative instruction.
+
+12
+00:01:44,000 --> 00:01:54,000
+For this instruction, the effective address is computed by sign extending the constant C, multiplying it by 4 and adding it to PC + 4.
+
+13
+00:01:54,000 --> 00:02:03,000
+The contents of register Rc are then stored at the memory location pointed to by the effective address that was just computed.
+
+14
+00:02:03,000 --> 00:02:10,000
+As a final step, the PC is incremented by 4 to point to the next instruction.
+
+15
+00:02:10,000 --> 00:02:14,000
+We are given the partially filled control ROM shown here.
+
+16
+00:02:14,000 --> 00:02:18,000
+It is our job to fill in all the yellow boxes labeled with a ?.
+
+17
+00:02:18,000 --> 00:02:22,000
+Let's begin by looking at the top row of this table.
+
+18
+00:02:22,000 --> 00:02:29,000
+The value that stands out as a bit different in this row is the PCSEL value which is equal to 2.
+
+19
+00:02:29,000 --> 00:02:39,000
+For most instructions PCSEL equals 0, for branch instructions it equals 1, and for JMP instructions it equals 2.
+
+20
+00:02:39,000 --> 00:02:44,000
+This means that the instruction described in this row must be a JMP instruction.
+
+21
+00:02:44,000 --> 00:02:54,000
+Zooming in on the PCSEL control logic from the beta diagram, we see that normally PCSEL = 0 to go to the next instruction.
+
+22
+00:02:54,000 --> 00:03:08,000
+PCSEL = 1 in order to perform a branch operation, and PCSEL = 2 in order to perform a jump operation where the target of the jump is specified by JT, or the jump target.
+
+23
+00:03:08,000 --> 00:03:14,000
+This means that the instruction described in this row must be a JMP instruction.
+
+24
+00:03:14,000 --> 00:03:17,000
+The behavior of a JMP instruction is shown here.
+
+25
+00:03:17,000 --> 00:03:26,000
+The effective address is calculated by taking the contents of RA and clearing the bottom 2 bits so that the value becomes word aligned.
+
+26
+00:03:26,000 --> 00:03:36,000
+The address of the next instruction, which is PC + 4, is stored in register Rc in case we need to return to the next instruction in the program.
+
+27
+00:03:36,000 --> 00:03:46,000
+The PC is then updated with the new effective address in order to actually continue execution at the destination of the JMP instruction.
+
+28
+00:03:46,000 --> 00:03:53,000
+This dataflow diagram highlights the required dataflow through the beta in order to properly implement the JMP instruction.
+
+29
+00:03:53,000 --> 00:04:01,000
+Note that no red lines pass through the ALU or memory because the ALU and memory are not used for this instruction.
+
+30
+00:04:01,000 --> 00:04:18,000
+The control signals that must be set in order to follow this path in the beta are as follows: WDSEL, or write data select, must be set to 0 in order to pass the value of PC + 4 through the WDSEL mux.
+
+31
+00:04:18,000 --> 00:04:26,000
+WERF, or write enable register file, must be set to 1 in order to enable writing to the register file.
+
+32
+00:04:26,000 --> 00:04:37,000
+WASEL, or write address select, must be set to 0 in order to write to the Rc register and not to the XP register.
+
+33
+00:04:37,000 --> 00:04:43,000
+ASEL, BSEL, and ALUFN, are all don't cares for the JMP instruction.
+
+34
+00:04:43,000 --> 00:04:52,000
+In addition MOE, which stands for memory output enable, is also a don't care because this instruction does not use the memory data.
+
+35
+00:04:52,000 --> 00:05:05,000
+The one control signal related to the memory that we do need to worry about is the MWR, or memory write read, signal which must be set to 0 so that no value will be written to memory.
+
+36
+00:05:05,000 --> 00:05:18,000
+Going back to our control ROM and filling in the value of WERF, we see that the control signals for the JMP instruction correspond to the dataflow diagram of the beta that we just looked at.
+
+37
+00:05:18,000 --> 00:05:25,000
+Moving on to row two of our control ROM, we see that now we have PCSEL = Z in this row.
+
+38
+00:05:25,000 --> 00:05:32,000
+This suggests that the instruction corresponding to this row is some kind of a branch instruction.
+
+39
+00:05:32,000 --> 00:05:38,000
+Of our two branch instructions, the one that branches when Z = 1 is BEQ.
+
+40
+00:05:38,000 --> 00:05:42,000
+This means that this row corresponds to a BEQ operation.
+
+41
+00:05:42,000 --> 00:05:59,000
+The rest of the control signals for the BEQ operation look just like the ones for the JMP because here too, the ALU and memory are not used so the only ALU and memory related signal that must be set is MWR so we don't write to memory.
+
+42
+00:05:59,000 --> 00:06:13,000
+Furthermore, like the JMP instruction, the branch instructions also store the return address in register Rc, so the behavior of the control signals related to the register file are all the same.
+
+43
+00:06:13,000 --> 00:06:18,000
+We now take a look at the third row of the control ROM.
+
+44
+00:06:18,000 --> 00:06:25,000
+In this row, we are actually told that the corresponding instruction is the newly added LDX instruction.
+
+45
+00:06:25,000 --> 00:06:33,000
+So it is our job to determine how to set the missing control signals in order to get the desired behavior for this operation.
+
+46
+00:06:33,000 --> 00:06:45,000
+Recall that the expected behavior of this instruction is that the contents of register Ra and Rb will be added together in order to produce the effective address of the load.
+
+47
+00:06:45,000 --> 00:06:49,000
+This means that we need to perform an ADD as our ALUFN.
+
+48
+00:06:49,000 --> 00:06:58,000
+We also need ASEL and BSEL equal to zero in order to pass the values of registers Ra and Rb to the ALU.
+
+49
+00:06:58,000 --> 00:07:05,000
+The complete dataflow through the register file, ALU, and memory is shown here.
+
+50
+00:07:05,000 --> 00:07:11,000
+In order to read register Rb rather than Rc, RA2SEL must be set to 0.
+
+51
+00:07:11,000 --> 00:07:19,000
+As we just mentioned, ASEL and BSEL are set to 0 and ALUFN is set to ADD.
+
+52
+00:07:19,000 --> 00:07:24,000
+The result of adding registers Ra and Rb is used as the address of the load.
+
+53
+00:07:24,000 --> 00:07:29,000
+This is called MA, or memory address in the beta diagram.
+
+54
+00:07:29,000 --> 00:07:37,000
+In order to enable reading from memory, we set MWR to 0 and MOE to 1.
+
+55
+00:07:37,000 --> 00:07:44,000
+This sets the read/write functionality to read, and enables an output to be read from the read port of the memory.
+
+56
+00:07:44,000 --> 00:07:49,000
+On the beta diagram, the read data is labeled MRD, or memory read data.
+
+57
+00:07:49,000 --> 00:07:56,000
+The data that is read from the memory is then passed along to the register file by setting WDSEL = 2.
+
+58
+00:07:56,000 --> 00:08:04,000
+In order to write this result to register Rc, WERF = 1, and WASEL = 0.
+
+59
+00:08:04,000 --> 00:08:11,000
+So the completed control ROM for the LDX operation is shown here.
+
+60
+00:08:11,000 --> 00:08:15,000
+We now move on to the fourth instruction.
+
+61
+00:08:15,000 --> 00:08:21,000
+Here we see that the ALUFN just passes operand B through the register file.
+
+62
+00:08:21,000 --> 00:08:25,000
+We also see that WERF is dependent on the value of Z.
+
+63
+00:08:25,000 --> 00:08:37,000
+This means that the instruction that corresponds to this row is MVZC which moves a constant into register Rc if the contents of register Ra = 0.
+
+64
+00:08:37,000 --> 00:08:51,000
+The way this instruction works is that BSEL = 1 in order to pass the constant through as the B operand, and ALUFN = B to pass that constant through the ALU.
+
+65
+00:08:51,000 --> 00:08:58,000
+WDSEL = 1 so that the output of the ALU is fed back as the write value for the register file.
+
+66
+00:08:58,000 --> 00:09:08,000
+Because WDSEL = 1 and not 2, we know that the data coming out of the memory will be ignored so MOE can be a don't care.
+
+67
+00:09:08,000 --> 00:09:16,000
+Of course, MWR still must be set to 0 in order to ensure that we don't write any random values into our memory.
+
+68
+00:09:16,000 --> 00:09:29,000
+RA2SEL is also a don't care because we don't care whether Register Rb or Register Rc are passed through as the second read argument of the register file, RD2.
+
+69
+00:09:29,000 --> 00:09:41,000
+The reason we don't care is because the BSEL = 1 will ignore the RD2 value and pass through the constant that comes directly from the instruction after sign extending it.
+
+70
+00:09:41,000 --> 00:09:49,000
+ASEL is also a don't care because the ALU will ignore the A input when ALUFN = B.
+
+71
+00:09:49,000 --> 00:09:57,000
+WASEL must be 0 so that the result of the operation is written into register Rc.
+
+72
+00:09:57,000 --> 00:10:08,000
+Finally, PCSEL = 0 to load PC + 4 into the PC register so that the next instruction will get fetched after this one.
+
+73
+00:10:08,000 --> 00:10:12,000
+We are now on the last row of our control ROM.
+
+74
+00:10:12,000 --> 00:10:20,000
+We know that this row must correspond to our third added instruction which is STR, or store relative.
+
+75
+00:10:20,000 --> 00:10:29,000
+Recall that this instruction writes the contents of register Rc into memory at the address that is computed by the effective address line.
+
+76
+00:10:29,000 --> 00:10:37,000
+The effective address for this instruction is PC + 4 + 4 * SEXT(C).
+
+77
+00:10:37,000 --> 00:10:47,000
+The extra adder, just under the instruction memory, is used to calculate PC + 4 + 4 * SEXT(C).
+
+78
+00:10:47,000 --> 00:10:54,000
+This value is then fed to the ALU via the A operand by setting ASEL = 1.
+
+79
+00:10:54,000 --> 00:11:04,000
+Setting ALUFN = A passes this value as the output of the ALU in order to be used as the memory address.
+
+80
+00:11:04,000 --> 00:11:07,000
+This is the address that the store will write to in memory.
+
+81
+00:11:07,000 --> 00:11:13,000
+The value that will be written to this address in memory is the contents of register Rc.
+
+82
+00:11:13,000 --> 00:11:20,000
+Register Rc is fed through the register file by setting RA2SEL = 1.
+
+83
+00:11:20,000 --> 00:11:25,000
+This makes RD2 have the contents of register Rc.
+
+84
+00:11:25,000 --> 00:11:35,000
+This value then becomes the MWD, or memory write data which is the data that will be stored in the memory address that was produced by the ALU.
+
+85
+00:11:35,000 --> 00:11:40,000
+In order to enable writing to the memory, MWR must be set to 1.
+
+86
+00:11:40,000 --> 00:11:45,000
+Since WERF = 0, nothing can be written to the register file.
+
+87
+00:11:45,000 --> 00:11:54,000
+This means that the value of MASEL and MDSEL are don't cares since the register file won't be affected regardless of their values.
+
+88
+00:11:54,000 --> 00:12:00,000
+Finally, the PC is incremented by 4 to fetch the next instruction.
+
+89
+00:12:00,000 --> 00:12:08,000
+So our completed Control ROM for the STR operation is shown here.
+

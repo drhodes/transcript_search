@@ -1,0 +1,336 @@
+0
+00:00:00,000 --> 00:00:05,000
+Today we're going to describe the datapath and control logic needed to execute Beta instructions.
+
+1
+00:00:05,000 --> 00:00:12,000
+In an upcoming lab assignment, we'll ask you to build a working implementation using our standard cell library.
+
+2
+00:00:12,000 --> 00:00:19,000
+When you're done, you'll have designed and debugged a 32-bit reduced-instruction set computer!  Not bad...
+
+3
+00:00:19,000 --> 00:00:24,000
+Before tackling a design task, it's useful to understand the goals for the design.
+
+4
+00:00:24,000 --> 00:00:31,000
+Functionality, of course; in our case the correct execution of instructions from the Beta ISA.
+
+5
+00:00:31,000 --> 00:00:34,000
+But there are other goals we should think about.
+
+6
+00:00:34,000 --> 00:00:41,000
+An obvious goal is to maximize performance, as measured by the number of instructions executed per second.
+
+7
+00:00:41,000 --> 00:00:47,000
+This is usually expressed in MIPS, an acronym for "Millions of Instructions Per Second".
+
+8
+00:00:47,000 --> 00:01:00,000
+When the Intel 8080 was introduced in 1974, it executed instructions at 0.29 MIPS or 290,000 instructions per second as measured by the Dhrystone benchmark.
+
+9
+00:01:00,000 --> 00:01:06,000
+Modern multi-core processors are rated between 10,000 and 100,000 MIPS.
+
+10
+00:01:06,000 --> 00:01:16,000
+Another goal might be to minimize the manufacturing cost, which in integrated circuit manufacturing is proportional to the size of the circuit.
+
+11
+00:01:16,000 --> 00:01:20,000
+Or we might want have the best performance for a given price.
+
+12
+00:01:20,000 --> 00:01:27,000
+In our increasingly mobile world, the best performance per watt might be an important goal.
+
+13
+00:01:27,000 --> 00:01:25,000
+One of the interesting challenges in computer engineering is deciding exactly how to balance performance against cost and power efficiency.
+
+14
+00:01:25,000 --> 00:01:42,000
+Clearly the designers of the Apple Watch have a different set of design goals then the designers of high-end desktop computers.
+
+15
+00:01:42,000 --> 00:01:49,000
+The performance of a processor is inversely proportional to the length of time it takes to run a program.
+
+16
+00:01:49,000 --> 00:01:53,000
+The shorter the execution time, the higher the performance.
+
+17
+00:01:53,000 --> 00:01:56,000
+The execution time is determined by three factors.
+
+18
+00:01:56,000 --> 00:01:59,000
+First, the number of instructions in the program.
+
+19
+00:01:59,000 --> 00:02:06,000
+Second, the number of clock cycles our sequential circuit requires to execute a particular instruction.
+
+20
+00:02:06,000 --> 00:02:18,000
+Complex instructions, e.g., adding two values from main memory, may make a program shorter, but may also require many clock cycles to perform the necessary memory and datapath operations.
+
+21
+00:02:18,000 --> 00:02:27,000
+Third, the amount of time needed for each clock cycle, as determined by the propagation delay of the digital logic in the datapath.
+
+22
+00:02:27,000 --> 00:02:33,000
+So to increase the performance we could reduce the number of instructions to be executed.
+
+23
+00:02:33,000 --> 00:02:39,000
+Or we can try to minimize the number of clock cycles needed on the average to execute our instructions.
+
+24
+00:02:39,000 --> 00:02:43,000
+There's obviously a bit of a tradeoff between these first two options:
+
+25
+00:02:43,000 --> 00:02:49,000
+more computation per instruction usually means it will take more time to execute the instruction.
+
+26
+00:02:49,000 --> 00:02:25,000
+Or we can try to keep our logic simple, minimizing its propagation delay in the hopes of having a short clock period.
+
+27
+00:02:25,000 --> 00:03:05,000
+Today we'll focus on an implementation for the Beta ISA that executes one instruction every clock cycle.
+
+28
+00:03:05,000 --> 00:03:16,000
+The combinational paths in our circuit will be fairly long, but, as we learned in Part 1 of the course, this gives us the opportunity to use pipelining to increase our implementation's throughput.
+
+29
+00:03:16,000 --> 00:03:22,000
+We'll talk about the implementation of a pipelined processor in some upcoming lectures.
+
+30
+00:03:22,000 --> 00:03:25,000
+Here's a quick refresher on the Beta ISA.
+
+31
+00:03:25,000 --> 00:03:31,000
+The Beta has thirty-two 32-bit registers that hold values for use by the datapath.
+
+32
+00:03:31,000 --> 00:03:45,000
+The first class of ALU instructions, which have 0b10 as the top 2 bits of the opcode field, perform an operation on two register operands (Ra and Rb), storing the result back into a specified destination register (Rc).
+
+33
+00:03:45,000 --> 00:03:55,000
+There's a 6-bit opcode field to specify the operation and three 5-bit register fields to specify the registers to use as source and destination.
+
+34
+00:03:55,000 --> 00:04:11,000
+The second class of ALU instructions, which have 0b11 in the top 2 bits of the opcode, perform the same set of operations where the second operand is a constant in the range -32768 to +32767.
+
+35
+00:04:11,000 --> 00:04:18,000
+The operations include arithmetic operations, comparisons, boolean operations, and shifts.
+
+36
+00:04:18,000 --> 00:04:26,000
+In assembly language, we use a "C" suffix added to the mnemonics shown here to indicate that the second operand is a constant.
+
+37
+00:04:26,000 --> 00:04:35,000
+This second instruction format is also used by the instructions that access memory and change the normally sequential execution order.
+
+38
+00:04:35,000 --> 00:04:47,000
+The use of just two instruction formats will make it very easy to build the logic responsible for translating the encoded instructions into the signals needed to control the operation of the datapath.
+
+39
+00:04:47,000 --> 00:04:52,000
+In fact, we'll be able to use many of the instruction bits as-is!
+
+40
+00:04:52,000 --> 00:05:02,000
+We'll build our datapath incrementally, starting with the logic needed to perform the ALU instructions, then add additional logic to execute the memory and branch instructions.
+
+41
+00:05:02,000 --> 00:05:13,000
+Finally, we'll need to add logic to handle what happens when an exception occurs and execution has to be suspended because the current instruction cannot be executed correctly.
+
+42
+00:05:13,000 --> 00:05:17,000
+We'll be using the digital logic gates we learned about in Part 1 of the course.
+
+43
+00:05:17,000 --> 00:05:24,000
+In particular, we'll need multi-bit registers to hold state information from one instruction to the next.
+
+44
+00:05:24,000 --> 00:05:32,000
+Recall that these memory elements load new values at the rising edge of the clock signal, then store that value until the next rising clock edge.
+
+45
+00:05:32,000 --> 00:05:39,000
+We'll use a lot of multiplexers in our design to select between alternative values in the datapath.
+
+46
+00:05:39,000 --> 00:05:46,000
+The actual computations will be performed by the arithmetic and logic unit (ALU) that we designed at the end of Part 1.
+
+47
+00:05:46,000 --> 00:05:54,000
+It has logic to perform the arithmetic, comparison, boolean and shift operations listed on the previous slide.
+
+48
+00:05:54,000 --> 00:05:59,000
+It takes in two 32-bit operands and produces a 32-bit result.
+
+49
+00:05:59,000 --> 00:06:09,000
+And, finally, we'll use several different memory components to implement register storage in the datapath and also for main memory, where instructions and data are stored.
+
+50
+00:06:09,000 --> 00:06:16,000
+You might find it useful to review the chapters on combinational and sequential logic in Part 1 of the course.
+
+51
+00:06:16,000 --> 00:06:21,000
+The Beta ISA specifies thirty-two 32-bit registers as part of the datapath.
+
+52
+00:06:21,000 --> 00:06:25,000
+These are shown as the magenta rectangles in the diagram below.
+
+53
+00:06:25,000 --> 00:06:34,000
+These are implemented as load-enabled registers, which have an EN signal that controls when the register is loaded with a new value.
+
+54
+00:06:34,000 --> 00:06:40,000
+If EN is 1, the register will be loaded from the D input at the next rising clock edge.
+
+55
+00:06:40,000 --> 00:06:47,000
+If EN is 0, the register is reloaded with its current value and hence its value is unchanged.
+
+56
+00:06:47,000 --> 00:07:00,000
+It might seem easier to add enabling logic to the clock signal, but this is almost never a good idea since any glitches in that logic might generate false edges that would cause the register to load a new value at the wrong time.
+
+57
+00:07:00,000 --> 00:07:04,000
+Always remember the mantra: NO GATED CLOCKS!
+
+58
+00:07:04,000 --> 00:07:11,000
+There are multiplexers (shown underneath the registers) that let us select a value from any of the 32 registers.
+
+59
+00:07:11,000 --> 00:07:16,000
+Since we need two operands for the datapath logic, there are two such multiplexers.
+
+60
+00:07:16,000 --> 00:07:26,000
+Their select inputs (RA1 and RA2) function as addresses, determining which register values will be selected as operands.
+
+61
+00:07:26,000 --> 00:07:35,000
+And, finally, there's a decoder that determines which of the 32 register load enables will be 1 based on the 5-bit WA input.
+
+62
+00:07:35,000 --> 00:07:42,000
+For convenience, we'll package all this functionality up into a single component called a "register file".
+
+63
+00:07:42,000 --> 00:07:52,000
+The register file has two read ports, which, given a 5-bit address input, deliver the selected register value on the read-data ports.
+
+64
+00:07:52,000 --> 00:07:56,000
+The two read ports operate independently.
+
+65
+00:07:56,000 --> 00:08:01,000
+They can read from different registers or, if the addresses are the same, read from the same register.
+
+66
+00:08:01,000 --> 00:08:12,000
+The signals on the left of the register file include a 5-bit value (WA) that selects a register to be written with the specified 32-bit write data (WD).
+
+67
+00:08:12,000 --> 00:08:21,000
+If the write enable signal (WE) is 1 at the rising edge of the clock (CLK) signal, the selected register will be loaded with the supplied write data.
+
+68
+00:08:21,000 --> 00:08:28,000
+Note that in the BETA ISA, reading from register address 31 should always produce a zero value.
+
+69
+00:08:28,000 --> 00:08:31,000
+The register file has internal logic to ensure that happens.
+
+70
+00:08:31,000 --> 00:08:35,000
+Here's a timing diagram that shows the register file in operation.
+
+71
+00:08:35,000 --> 00:08:43,000
+To read a value from the register file, supply a stable address input (RA) on one of read ports.
+
+72
+00:08:43,000 --> 00:08:51,000
+After the register file's propagation delay, the value of the selected register will appear on the corresponding read data port (RD). [CLICK]
+
+73
+00:08:51,000 --> 00:08:57,000
+Not surprisingly, the register file write operation is very similar to writing an ordinary D-register.
+
+74
+00:08:57,000 --> 00:09:09,000
+The write address (WA), write data (WD) and write enable (WE) signals must all be valid and stable for some specified setup time before the rising edge of the clock.
+
+75
+00:09:09,000 --> 00:09:16,000
+And must remain stable and valid for the specified hold time after the rising clock edge.
+
+76
+00:09:16,000 --> 00:09:23,000
+If those timing constraints are met, the register file will reliably update the value of the selected register. [CLICK]
+
+77
+00:09:23,000 --> 00:09:35,000
+When a register value is written at the rising clock edge, if that value is selected by a read address, the new data will appear after the propagation delay on the corresponding data port.
+
+78
+00:09:35,000 --> 00:09:44,000
+In other words, the read data value changes if either the read address changes or the value of the selected register changes.
+
+79
+00:09:44,000 --> 00:09:49,000
+Can we read and write the same register in a single clock cycle?
+
+80
+00:09:49,000 --> 00:09:59,000
+Yes!  If the read address becomes valid at the beginning of the cycle, the old value of the register will be appear on the data port for the rest of the cycle.
+
+81
+00:09:59,000 --> 00:10:07,000
+Then, the write occurs at the *end* of the cycle and the new register value will be available in the next clock cycle.
+
+82
+00:10:07,000 --> 00:10:11,000
+Okay, that's a brief run-though of the components we'll be using.
+
+83
+00:10:11,000 --> 00:10:13,000
+Let's get started on the design!
+

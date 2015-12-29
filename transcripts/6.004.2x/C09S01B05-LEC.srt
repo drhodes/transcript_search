@@ -1,0 +1,224 @@
+0
+00:00:00,000 --> 00:00:01,000
+We're on the home stretch now.
+
+1
+00:00:01,000 --> 00:00:10,000
+For all the instructions up until now, the next instruction has come from the location following the current instruction -- hence the "PC+4" logic.
+
+2
+00:00:10,000 --> 00:00:15,000
+Branches and JMPs change that by altering the value in the PC.
+
+3
+00:00:15,000 --> 00:00:22,000
+The JMP instruction simply takes the value in the RA register and makes it the next PC value.
+
+4
+00:00:22,000 --> 00:00:29,000
+The PCSEL MUX in the upper left-hand corner lets the control logic select the source of the next PC value.
+
+5
+00:00:29,000 --> 00:00:34,000
+When PCSEL is 0, the incremented PC value is chosen.
+
+6
+00:00:34,000 --> 00:00:39,000
+When PCSEL is 2, the value of the RA register is chosen.
+
+7
+00:00:39,000 --> 00:00:43,000
+We'll see how the other inputs to the PCSEL MUX are used in just a moment.
+
+8
+00:00:43,000 --> 00:00:53,000
+The JMP and branch instructions also cause the address of the following instruction, i.e., the PC+4 value, to be written to the RC register.
+
+9
+00:00:53,000 --> 00:01:02,000
+When WDSEL is 0, the "0" input of the WDSEL MUX is used to select the PC+4 value as the write-back data.
+
+10
+00:01:02,000 --> 00:01:05,000
+Here's how the data flow works.
+
+11
+00:01:05,000 --> 00:01:16,000
+The output of the PC+4 adder is is routed to the register file and WERF is set to 1 to enable that value to be written at the end of the cycle.
+
+12
+00:01:16,000 --> 00:01:24,000
+Meanwhile, the value of RA register coming out of the register file is connected to the "2" input of the PCSEL MUX.
+
+13
+00:01:24,000 --> 00:01:31,000
+So setting PCSEL to 2 will select the value in the RA register as the next value for the PC.
+
+14
+00:01:31,000 --> 00:01:42,000
+The rest of the control signals are "don't cares", except, of course for the memory write enable (MWR), which can never be "don't care" lest we cause an accidental write to some memory location.
+
+15
+00:01:42,000 --> 00:01:53,000
+The branch instruction requires an additional adder to compute the target address by adding the scaled offset from the instruction's literal field to the current PC+4 value.
+
+16
+00:01:53,000 --> 00:02:03,000
+Remember that we scale the offset by a factor of 4 to convert it from the word offset stored in the literal to the byte offset required for the PC.
+
+17
+00:02:03,000 --> 00:02:13,000
+The output of the offset adder becomes the "1" input to the PCSEL MUX, where, if the branch is taken, it will become the next value of the PC.
+
+18
+00:02:13,000 --> 00:02:23,000
+Note that multiplying by 4 is easily accomplished by shifting the literal two bits to the left, which inserts two 0-bits at the low-order end of the value.
+
+19
+00:02:23,000 --> 00:02:32,000
+And, like before, the sign-extension just requires replicating bit ID[15], in this case fourteen times.
+
+20
+00:02:32,000 --> 00:02:41,000
+So implementing this complicated-looking expression requires care in wiring up the input to the offset adder, but no additional logic!
+
+21
+00:02:41,000 --> 00:02:46,000
+We do need some logic to determine if we should branch or not.
+
+22
+00:02:46,000 --> 00:02:54,000
+The 32-bit NOR gate connected to the first read port of the register file tests the value of the RA register.
+
+23
+00:02:54,000 --> 00:03:02,000
+The NOR's output Z will be 1 if all the bits of the RA register value are 0, and 0 otherwise.
+
+24
+00:03:02,000 --> 00:03:09,000
+The Z value can be used by the control logic to determine the correct value for PCSEL.
+
+25
+00:03:09,000 --> 00:03:19,000
+If Z indicates the branch is taken, PCSEL will be 1 and the output of the offset adder becomes the next value of the PC.
+
+26
+00:03:19,000 --> 00:03:28,000
+If the branch is not taken, PCSEL will be 0 and execution will continue with the next instruction at PC+4.
+
+27
+00:03:28,000 --> 00:03:39,000
+As in the JMP instruction, the PC+4 value is routed to the register file to be written into the RC register at end of the cycle.
+
+28
+00:03:39,000 --> 00:03:49,000
+Meanwhile, the value of Z is computed from the value of the RA register while the branch offset adder computes the address of the branch target.
+
+29
+00:03:49,000 --> 00:04:05,000
+The output of the offset adder is routed to the PCSEL MUX where the value of the 3-bit PCSEL control signal, computed by the control logic based on Z, determines whether the next PC value is the branch target or the PC+4 value.
+
+30
+00:04:05,000 --> 00:04:11,000
+The remaining control signals are unused and set to their default "don't care" values.
+
+31
+00:04:11,000 --> 00:04:18,000
+We have one last instruction to introduce: the LDR or load-relative instruction.
+
+32
+00:04:18,000 --> 00:04:25,000
+LDR behaves like a normal LD instruction except that the memory address is taken from the branch offset adder.
+
+33
+00:04:25,000 --> 00:04:31,000
+Why would it be useful to load a value from a location near the LDR instruction?
+
+34
+00:04:31,000 --> 00:04:41,000
+Normally such addresses would refer to the neighboring instructions, so why would we want to load the binary encoding of an instruction into a register to be used as data?
+
+35
+00:04:41,000 --> 00:04:53,000
+The use case for LDR is accessing large constants that have to be stored in main memory because they are too large to fit into the 16-bit literal field of an instruction.
+
+36
+00:04:53,000 --> 00:05:00,000
+In the example shown here, the compiled code needs to load the constant 123456.
+
+37
+00:05:00,000 --> 00:05:10,000
+So it uses an LDR instruction that refers to a nearby location C1: that has been initialized with the required value.
+
+38
+00:05:10,000 --> 00:05:21,000
+Since this read-only constant is part of the program, it makes sense to store it with the instructions for the program, usually just after the code for a procedure.
+
+39
+00:05:21,000 --> 00:05:28,000
+Note that we have to be careful to place the storage location so that it won't be executed as an instruction!
+
+40
+00:05:28,000 --> 00:05:46,000
+To route the output of the offset adder to the main memory address port, we'll add ASEL MUX so we can select either the RA register value (when ASEL=0) or the output of the offset adder (when ASEL=1) as the first ALU operand.
+
+41
+00:05:46,000 --> 00:05:59,000
+For LDR, ASEL will be 1, and we'll then ask the ALU compute the Boolean operation "A", i.e., the boolean function whose output is just the value of the first operand.
+
+42
+00:05:59,000 --> 00:06:09,000
+This value then appears on the ALU output, which is connected to the main memory address port and the remainder of the execution proceeds just like it did for LD.
+
+43
+00:06:09,000 --> 00:06:12,000
+This seems a bit complicated!
+
+44
+00:06:12,000 --> 00:06:15,000
+Mr. Blue has a good question:
+
+45
+00:06:15,000 --> 00:06:22,000
+why not just put the ASEL MUX on the wire leading to the main memory address port and bypass the ALU altogether?
+
+46
+00:06:22,000 --> 00:06:28,000
+The answer has to do with the amount of time needed to compute the memory address.
+
+47
+00:06:28,000 --> 00:06:44,000
+If we moved the ASEL MUX here, the data flow for LD and ST addresses would then pass through two MUXes, the BSEL MUX and the ASEL MUX, slowing down the arrival of the address by a small amount.
+
+48
+00:06:44,000 --> 00:06:54,000
+This may not seem like a big deal, but the additional time would have to be added the clock period, thus slowing down every instruction by a little bit.
+
+49
+00:06:54,000 --> 00:07:04,000
+When executing billions of instructions, a little extra time on each instruction really impacts the overall performance of the processor.
+
+50
+00:07:04,000 --> 00:07:16,000
+By placing the ASEL MUX where we did, its propagation delay overlaps that of the BSEL MUX, so the increased functionality it provides comes with no cost in performance.
+
+51
+00:07:16,000 --> 00:07:21,000
+Here's the data flow for the LDR instruction.
+
+52
+00:07:21,000 --> 00:07:26,000
+The output of the offset adder is routed through the ASEL MUX to the ALU.
+
+53
+00:07:26,000 --> 00:07:33,000
+The ALU performs the Boolean computation "A" and the result becomes the address for main memory.
+
+54
+00:07:33,000 --> 00:07:41,000
+The returning data is routed through the WDSEL MUX so it can be written into the RC register at the end of the cycle.
+
+55
+00:07:41,000 --> 00:07:46,000
+The remaining control values are given their usual default values.
+

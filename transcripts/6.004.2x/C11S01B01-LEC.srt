@@ -1,0 +1,108 @@
+0
+00:00:00,000 --> 00:00:05,000
+In the last lecture we completed the design of the Beta, our reduced-instruction-set computer.
+
+1
+00:00:05,000 --> 00:00:13,000
+The simple organization of the Beta ISA meant that there was a lot commonality in the circuity needed to implement the instructions.
+
+2
+00:00:13,000 --> 00:00:20,000
+The final design has a few main building blocks with MUX steering logic to select input values as appropriate.
+
+3
+00:00:20,000 --> 00:00:38,000
+If we were to count MOSFETs and think about propagation delays, we'd quickly determine that our 3-port main memory (shown here as the two yellow components) was the most costly component both in terms of space and percentage of the cycle time required by the memory accesses.
+
+4
+00:00:38,000 --> 00:00:43,000
+So in many ways, we really have a "memory machine" instead of a "computing machine".
+
+5
+00:00:43,000 --> 00:00:49,000
+The execution of every instruction starts by fetching the instruction from main memory.
+
+6
+00:00:49,000 --> 00:00:55,000
+And ultimately all the data processed by the CPU is loaded from or stored to main memory.
+
+7
+00:00:55,000 --> 00:01:09,000
+A very few frequently-used variable values can be kept in the CPU's register file, but most interesting programs manipulate *much* more data than can be accommodated by the storage available as part of the CPU datapath.
+
+8
+00:01:09,000 --> 00:01:23,000
+In fact, the performance of most modern computers is limited by the bandwidth, i.e., bytes/second, of the connection between the CPU and main memory, the so-called "memory bottleneck".
+
+9
+00:01:23,000 --> 00:01:33,000
+The goal of this lecture is to understand the nature of the bottleneck and to see if there architectural improvements we might make to minimize the problem as much as possible.
+
+10
+00:01:33,000 --> 00:01:43,000
+We have a number of memory technologies at our disposal, varying widely in their capacity, latency, bandwidth, energy efficiency and their cost.
+
+11
+00:01:43,000 --> 00:01:49,000
+Not surprisingly, we find that each is useful for different applications in our overall system architecture.
+
+12
+00:01:49,000 --> 00:02:00,000
+Our registers are built from sequential logic and provide very low latency access (20ps or so) to at most a few thousands of bits of data.
+
+13
+00:02:00,000 --> 00:02:08,000
+Static and dynamic memories, which we'll discuss further in the coming slides, offer larger capacities at the cost of longer access latencies.
+
+14
+00:02:08,000 --> 00:02:18,000
+Static random-access memories (SRAMs) are designed to provide low latencies (a few nanoseconds at most) to many thousands of locations.
+
+15
+00:02:18,000 --> 00:02:29,000
+Already we see that more locations means longer access latencies -- this is a fundamental size vs. performance tradeoff of our current memory architectures.
+
+16
+00:02:29,000 --> 00:02:43,000
+The tradeoff comes about because increasing the number of bits will increase the area needed for the memory circuitry, which will in turn lead to longer signal lines and slower circuit performance due to increased capacitive loads.
+
+17
+00:02:43,000 --> 00:02:52,000
+Dynamic random-access memories (DRAMs) are optimized for capacity and low cost, sacrificing access latency.
+
+18
+00:02:52,000 --> 00:03:05,000
+As we'll see in this lecture, we'll use both SRAMs and DRAMs to build a hybrid memory hierarchy that provides low average latency and high capacity -- an attempt to get the best of both worlds!
+
+19
+00:03:05,000 --> 00:03:10,000
+Notice that the word "average" has snuck into the performance claims.
+
+20
+00:03:10,000 --> 00:03:18,000
+This means that we'll be relying on statistical properties of memory accesses to achieve our goals of low latency and high capacity.
+
+21
+00:03:18,000 --> 00:03:30,000
+In the worst case, we'll still be stuck with the capacity limitations of SRAMs and the long latencies of DRAMs, but we'll work hard to ensure that the worst case occurs infrequently!
+
+22
+00:03:30,000 --> 00:03:37,000
+Flash memory and hard-disk drives provide non-volatile storage.
+
+23
+00:03:37,000 --> 00:03:42,000
+"Non-volatile" means that the memory contents are preserved even when the power is turned off.
+
+24
+00:03:42,000 --> 00:03:50,000
+Hard disks are at the bottom of the memory hierarchy, providing massive amounts of long-term storage for very little cost.
+
+25
+00:03:50,000 --> 00:04:08,000
+Flash memories, with a 100-fold improvement in access latency, are often used in concert with hard-disk drives in the same way that SRAMs are used in concert with DRAMs, i.e., to provide a hybrid system for non-volatile storage that has improved latency *and* high capacity.
+
+26
+00:04:08,000 --> 00:04:16,000
+Let's learn a bit more about each of these four memory technologies, then we'll return to the job of building our memory system.
+

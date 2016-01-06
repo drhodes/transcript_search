@@ -1,0 +1,252 @@
+0
+00:00:00,000 --> 00:00:06,000
+Non-volatile memories are used to maintain system state even when the system is powered down.
+
+1
+00:00:06,000 --> 00:00:15,000
+In flash memories, long-term storage is achieved by storing charge on an well-insulated conductor called a floating gate, where it will remain stable for years.
+
+2
+00:00:15,000 --> 00:00:23,000
+The floating gate is incorporated in a standard MOSFET, placed between the MOSFET's gate and the MOSFET's channel.
+
+3
+00:00:23,000 --> 00:00:39,000
+If there is no charge stored on the floating gate, the MOSFET can be turned on, i.e., be made to conduct, by placing a voltage V_1 on the gate terminal, creating an inversion layer that connects the MOSFET's source and drain terminals.
+
+4
+00:00:39,000 --> 00:00:46,000
+If there is a charge stored on the floating gate, a higher voltage V_2 is required to turn on the MOSFET.
+
+5
+00:00:46,000 --> 00:00:56,000
+By setting the gate terminal to a voltage between V_1 and V_2, we can determine if the floating gate is charged by testing to see if the MOSFET is conducting.
+
+6
+00:00:56,000 --> 00:01:10,000
+In fact, if we can measure the current flowing through the MOSFET, we can determine how much charge is stored on the floating gate, making it possible to store multiple bits of information in one flash cell by varying the amount of charge on its floating gate.
+
+7
+00:01:10,000 --> 00:01:24,000
+Flash cells can be connected in parallel or series to form circuits resembling CMOS NOR or NAND gates, allowing for a variety of access architectures suitable for either random or sequential access.
+
+8
+00:01:24,000 --> 00:01:33,000
+Flash memories are very dense, approaching the areal density of DRAMs, particularly when each cell holds multiple bits of information.
+
+9
+00:01:33,000 --> 00:01:40,000
+Read access times for NOR flash memories are similar to that of DRAMs, several tens of nanoseconds.
+
+10
+00:01:40,000 --> 00:01:46,000
+Read times for NAND flash memories are much longer, on the order of 10 microseconds.
+
+11
+00:01:46,000 --> 00:01:56,000
+Write times for all types of flash memories are quite long since high voltages have to be used to force electrons to cross the insulating barrier surrounding the floating gate.
+
+12
+00:01:56,000 --> 00:02:07,000
+Flash memories can only be written some number of times before the insulating layer is damaged to the point that the floating gate will no longer reliably store charge.
+
+13
+00:02:07,000 --> 00:01:00,000
+Currently the number of guaranteed writes varies between 100,000 and
+
+14
+00:02:12,000 --> 00:02:24,000
+To work around this limitation, flash chips contain clever address mapping algorithms so that writes to the same address actually are mapped to different flash cells on each successive write.
+
+15
+00:02:24,000 --> 00:02:36,000
+The bottom line is that flash memories are a higher-performance but higher-cost replacement for the hard-disk drive, the long-time technology of choice for non-volatile storage.
+
+16
+00:02:36,000 --> 00:02:42,000
+A hard-disk drive (HDD) contains one or more rotating platters coated with a magnetic material.
+
+17
+00:02:42,000 --> 00:02:48,000
+The platters rotate at speeds ranging from 5400 to 15000 RPM.
+
+18
+00:02:48,000 --> 00:02:58,000
+A read/write head positioned above the surface of a platter can detect or change the orientation of the magnetization of the magnetic material below.
+
+19
+00:02:58,000 --> 00:03:05,000
+The read/write head is mounted an actuator that allows it to be positioned over different circular tracks.
+
+20
+00:03:05,000 --> 00:03:16,000
+To read a particular sector of data, the head must be positioned radially over the correct track, then wait for the platter to rotate until it's over the desired sector.
+
+21
+00:03:16,000 --> 00:03:25,000
+The average total time required to correctly position the head is on the order of 10 milliseconds, so hard disk access times are quite long.
+
+22
+00:03:25,000 --> 00:03:33,000
+However, once the read/write head is in the correct position, data can be transferred at the respectable rate of 100 megabytes/second.
+
+23
+00:03:33,000 --> 00:03:43,000
+If the head has to be repositioned between each access, the effective transfer rate drops 1000-fold, limited by the time it takes to reposition the head.
+
+24
+00:03:43,000 --> 00:03:53,000
+Hard disk drives provide cost-effective non-volatile storage for terabytes of data, albeit at the cost of slow access times.
+
+25
+00:03:53,000 --> 00:03:56,000
+This completes our whirlwind tour of memory technologies.
+
+26
+00:03:56,000 --> 00:04:02,000
+If you'd like to learn a bit more, Wikipedia has useful articles on each type of device.
+
+27
+00:04:02,000 --> 00:04:09,000
+SRAM sizes and access times have kept pace with the improvements in the size and speed of integrated circuits.
+
+28
+00:04:09,000 --> 00:04:19,000
+Interestingly, although capacities and transfer rates for DRAMs and HDDs have improved, their initial access times have not improved nearly as rapidly.
+
+29
+00:04:19,000 --> 00:04:27,000
+Thankfully over the past decade flash memories have helped to fill the performance gap between processor speeds and HDDs.
+
+30
+00:04:27,000 --> 00:04:39,000
+But the gap between processor cycle times and DRAM access times has continued to widen, increasing the challenge of designing low-latency high-capacity memory systems.
+
+31
+00:04:39,000 --> 00:04:49,000
+The capacity of the available memory technologies varies over 10 orders of magnitude, and the variation in latencies varies over 8 orders of magnitude.
+
+32
+00:04:49,000 --> 00:04:56,000
+This creates a considerable challenge in figuring out how to navigate the speed vs size tradeoffs.
+
+33
+00:04:56,000 --> 00:05:05,000
+Each transition in memory hierarchy shows the same fundamental design choice: we can pick smaller-and-faster or larger-and-slower.
+
+34
+00:05:05,000 --> 00:05:10,000
+This is a bit awkward actually -- can we figure how to get the best of both worlds?
+
+35
+00:05:10,000 --> 00:05:16,000
+We want our system to behave as if it had a large, fast, and cheap main memory.
+
+36
+00:05:16,000 --> 00:05:21,000
+Clearly we can't achieve this goal using any single memory technology.
+
+37
+00:05:21,000 --> 00:05:32,000
+Here's an idea: can we use a hierarchical system of memories with different tradeoffs to achieve close to the same results as a large, fast, cheap memory?
+
+38
+00:05:32,000 --> 00:05:40,000
+Could we arrange for memory locations we're using often to be stored, say, in SRAM and have those accesses be low latency?
+
+39
+00:05:40,000 --> 00:05:47,000
+Could the rest of the data could be stored in the larger and slower memory components, moving the between the levels when necessary?
+
+40
+00:05:47,000 --> 00:05:51,000
+Let's follow this train of thought and see where it leads us.
+
+41
+00:05:51,000 --> 00:05:54,000
+There are two approaches we might take.
+
+42
+00:05:54,000 --> 00:06:05,000
+The first is to expose the hierarchy, providing some amount of each type of storage and let the programmer decide how best to allocate the various memory resources for each particular computation.
+
+43
+00:06:05,000 --> 00:06:16,000
+The programmer would write code that moved data into fast storage when appropriate, then back to the larger and slower memories when low-latency access was no longer required.
+
+44
+00:06:16,000 --> 00:06:25,000
+There would only be a small amount of the fastest memory, so data would be constantly in motion as the focus of the computation changed.
+
+45
+00:06:25,000 --> 00:06:29,000
+This approach has had notable advocates.
+
+46
+00:06:29,000 --> 00:06:34,000
+Perhaps the most influential was Seymour Cray, the "Steve Jobs" of supercomputers.
+
+47
+00:06:34,000 --> 00:06:45,000
+Cray was the architect of the world's fastest computers in each of three decades, inventing many of the technologies that form the foundation of high-performance computing.
+
+48
+00:06:45,000 --> 00:06:55,000
+His insight to managing the memory hierarchy was to organize data as vectors and move vectors in and out of fast memory under program control.
+
+49
+00:06:55,000 --> 00:07:05,000
+This was actually a good data abstraction for certain types of scientific computing and his vector machines had the top computing benchmarks for many years.
+
+50
+00:07:05,000 --> 00:07:14,000
+The second alternative is to hide the hierarchy and simply tell the programmer they have a large, uniform address space to use as they wish.
+
+51
+00:07:14,000 --> 00:07:24,000
+The memory system would, behind the scenes, move data between the various levels of the memory hierarchy, depending on the usage patterns it detected.
+
+52
+00:07:24,000 --> 00:07:34,000
+This would require circuitry to examine each memory access issued by the CPU to determine where in the hierarchy to find the requested location.
+
+53
+00:07:34,000 --> 00:07:41,000
+And then, if a particular region of addresses was frequently accessed -- say, when fetching instructions in a loop --
+
+54
+00:07:41,000 --> 00:07:49,000
+the memory system would arrange for those accesses to be mapped to the fastest memory component and automatically move the loop instructions there.
+
+55
+00:07:49,000 --> 00:07:59,000
+All of this machinery would be transparent to the programmer: the program would simply fetch instructions and access data and the memory system would handle the rest.
+
+56
+00:07:59,000 --> 00:08:06,000
+Could the memory system automatically arrange for the right data to be in the right place at the right time?
+
+57
+00:08:06,000 --> 00:08:10,000
+Cray was deeply skeptical of this approach.
+
+58
+00:08:10,000 --> 00:08:13,000
+He famously quipped "that you can't fake what you haven't got".
+
+59
+00:08:13,000 --> 00:08:23,000
+Wouldn't the programmer, with her knowledge of how data was going to be used by a particular program, be able to do a better job by explicitly managing the memory hierarchy?
+
+60
+00:08:23,000 --> 00:08:37,000
+It turns out that when running general-purpose programs, it is possible to build an automatically managed, low-latency, high-capacity hierarchical memory system that appears as one large, uniform memory.
+
+61
+00:08:37,000 --> 00:08:40,000
+What's the insight that makes this possible?
+
+62
+00:08:40,000 --> 00:08:43,000
+That's the topic of the next section.
+

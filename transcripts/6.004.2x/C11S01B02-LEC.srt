@@ -1,0 +1,208 @@
+0
+00:00:00,000 --> 00:00:08,000
+SRAMs are organized as an array of memory locations, where a memory access is either reading or writing all the bits in a single location.
+
+1
+00:00:08,000 --> 00:00:16,000
+Here we see the component layout for a 8-location SRAM array where each location hold 6 bits of data.
+
+2
+00:00:16,000 --> 00:00:26,000
+You can see that the individual bit cells are organized as 8 rows (one row per location) by 6 columns (one column per bit in each memory word).
+
+3
+00:00:26,000 --> 00:00:32,000
+The circuitry around the periphery is used to decode addresses and support read and write operations.
+
+4
+00:00:32,000 --> 00:00:39,000
+To access the SRAM, we need provide enough address bits to uniquely specify the location.
+
+5
+00:00:39,000 --> 00:00:44,000
+In this case we need 3 address bits to select one of the 8 memory locations.
+
+6
+00:00:44,000 --> 00:00:55,000
+The address decoder logic sets one of the 8 wordlines (the horizontal wires in the array) high to enable a particular row (location) for the upcoming access.
+
+7
+00:00:55,000 --> 00:01:00,000
+The remaining wordlines are set low, disabling the cells they control.
+
+8
+00:01:00,000 --> 00:01:11,000
+The active wordline enables each of the SRAM bit cells on the selected row, connecting each cell to a pair of bit lines (the vertical wires in the array).
+
+9
+00:01:11,000 --> 00:01:21,000
+During read operations the bit lines carry the analog signals from the enabled bit cells to the sense amplifiers, which convert the analog signals to digital data.
+
+10
+00:01:21,000 --> 00:01:28,000
+During write operations incoming data is driven onto the bit lines to be stored into the enabled bit cells.
+
+11
+00:01:28,000 --> 00:01:37,000
+Larger SRAMs will have a more complex organization in order to minimize the length, and hence the capacitance, of the bit lines.
+
+12
+00:01:37,000 --> 00:01:40,000
+The heart of the SRAM are the bit cells.
+
+13
+00:01:40,000 --> 00:01:46,000
+The typical cell has two CMOS inverters wired in a positive feedback loop to create a bistable storage element.
+
+14
+00:01:46,000 --> 00:01:50,000
+The diagram on the right shows the two stable configurations.
+
+15
+00:01:50,000 --> 00:01:54,000
+In the top configuration, the cell is storing a "1" bit.
+
+16
+00:01:54,000 --> 00:01:57,000
+In the bottom configuration, it's storing a 0 bit.
+
+17
+00:01:57,000 --> 00:02:09,000
+The cell provides stable storage in the sense that as long as there's power, the noise immunity of the inverters will ensure that the logic values will be maintained even if there's electrical noise on either inverter input.
+
+18
+00:02:09,000 --> 00:02:16,000
+Both sides of the feedback loop are connected via access FETs to the two vertical bit lines.
+
+19
+00:02:16,000 --> 00:02:27,000
+When the wordline connected to the gates of the access FETs is high, the FETs are "on", i.e., they will make an electrical connection between the cell's internal circuity and the bitlines.
+
+20
+00:02:27,000 --> 00:02:39,000
+When the wordline is low, the access FETs are "off" and the bistable feedback loop is isolated from the bitlines and will happily maintain the stored value as long as there's power.
+
+21
+00:02:39,000 --> 00:02:51,000
+During a read operation, the drivers first recharge all the bitlines to Vdd (i.e., a logical "1" value) and then disconnect, leaving the bitlines floating at 1.
+
+22
+00:02:51,000 --> 00:02:58,000
+Then the address decoder sets one of the wordlines high, connecting a row of bit cells to their bitlines.
+
+23
+00:02:58,000 --> 00:03:03,000
+Each cell in the selected row then pulls one of its two bitlines to GND.
+
+24
+00:03:03,000 --> 00:03:06,000
+In this example, it's the right bitline that's pulled low.
+
+25
+00:03:06,000 --> 00:03:17,000
+Transitions on the bitlines are slow since the bitline has a large total capacitance and the MOSFETs in the two inverters are small to keep the cell has small as possible.
+
+26
+00:03:17,000 --> 00:03:26,000
+The large capacitance comes partly from the bitline's length and partly from the diffusion capacitance of the access FETs in other cells in the same column.
+
+27
+00:03:26,000 --> 00:03:39,000
+Rather than wait for the bitline to reach a valid logic level, sense amplifiers are used to quickly detect the small voltage difference developing between the two bitlines and generate the appropriate digital output.
+
+28
+00:03:39,000 --> 00:03:51,000
+Since detecting small changes in a voltage is very sensitive to electrical noise, the SRAM uses a pair of bitlines for each bit and a differential sense amplifier to provide greater noise immunity.
+
+29
+00:03:51,000 --> 00:04:05,000
+As you can see, designing a low-latency SRAM involves a lot of expertise with the analog behavior of MOSFETs and some cleverness to ensure electrical noise will not interfere with the correct operation of the circuitry.
+
+30
+00:04:05,000 --> 00:04:10,000
+Write operations start by driving the bitlines to the appropriate values.
+
+31
+00:04:10,000 --> 00:04:20,000
+In the example shown here, we want to write a 0-bit into the cell, so the left bitline is set to GND and the right bitline is set to VDD.
+
+32
+00:04:20,000 --> 00:04:28,000
+As before, the address decoder then sets one of the wordlines high, selecting all the cells in a particular row for the write operation.
+
+33
+00:04:28,000 --> 00:04:43,000
+The drivers have much larger MOSFETs than those in the cell's inverters, so the internal signals in the enabled cells are forced to the values on the bitlines and the bistable circuits "flip" into the new stable configuration.
+
+34
+00:04:43,000 --> 00:04:52,000
+We're basically shorting together the outputs of the driver and the internal inverter, so this is another analog operation!
+
+35
+00:04:52,000 --> 00:04:55,000
+This would be a no-no in a strictly digital circuit.
+
+36
+00:04:55,000 --> 00:05:04,000
+Since n-fets usually carry much higher source-drain currents than p-fets of the same width and given the threshold-drop of the n-fet access transistor,
+
+37
+00:05:04,000 --> 00:05:17,000
+almost all the work of the write is performed by the large n-fet pulldown transistor connected to the bitline with the 0 value, which easily overpowers the small p-fet pullup of the inverters in the cell.
+
+38
+00:05:17,000 --> 00:05:26,000
+Again, SRAM designers need a lot of expertise to correctly balance the sizes of MOSFETs to ensure fast and reliable write operations.
+
+39
+00:05:26,000 --> 00:05:34,000
+It's not hard to augment the SRAM to support multiple read/write ports, a handy addition for register file circuits.
+
+40
+00:05:34,000 --> 00:05:40,000
+We'll do this by adding additional sets of wordlines, bitlines, drivers, and sense amps.
+
+41
+00:05:40,000 --> 00:05:47,000
+This will give us multiple paths to independently access the bistable storage elements in the various rows of the memory array.
+
+42
+00:05:47,000 --> 00:05:57,000
+With an N-port SRAM, for each bit we'll need N wordlines, 2N bitlines and 2N access FETs.
+
+43
+00:05:57,000 --> 00:06:10,000
+The additional wordlines increase the effective height of the cell and the additional bitlines increase the effective width of the cell and so the area required by all these wires quickly dominates the size of the SRAM.
+
+44
+00:06:10,000 --> 00:06:18,000
+Since both the height and width of a cell increase when adding ports, the overall area grows as the square of the number of read/write ports.
+
+45
+00:06:18,000 --> 00:06:26,000
+So one has to take care not to gratuitously add ports lest the cost of the SRAM get out of hand.
+
+46
+00:06:26,000 --> 00:06:35,000
+In summary, the circuitry for the SRAM is organized as an array of bit cells, with one row for each memory location and one column for each bit in a location.
+
+47
+00:06:35,000 --> 00:06:41,000
+Each bit is stored by two inverters connected to form a bistable storage element.
+
+48
+00:06:41,000 --> 00:06:47,000
+Reads and writes are essentially analog operations performed via the bitlines and access FETs.
+
+49
+00:06:47,000 --> 00:06:51,000
+The SRAM uses 6 MOSFETs for each bit cell.
+
+50
+00:06:51,000 --> 00:06:52,000
+Can we do better?
+
+51
+00:06:52,000 --> 00:06:58,000
+What's the minimum number of MOSFETs needed to store a single bit of information?
+

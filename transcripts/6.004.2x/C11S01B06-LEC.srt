@@ -1,0 +1,216 @@
+0
+00:00:00,000 --> 00:00:03,000
+Okay, let's review our plan.
+
+1
+00:00:03,000 --> 00:00:07,000
+The processor starts an access by sending an address to the cache.
+
+2
+00:00:07,000 --> 00:00:13,000
+If data for the requested address is held in the cache, it's quickly returned to the CPU.
+
+3
+00:00:13,000 --> 00:00:23,000
+If the data we request is not in the cache, we have a cache miss, so the cache has to make a request to main memory to get the data, which it then returns to processor.
+
+4
+00:00:23,000 --> 00:00:30,000
+Typically the cache will remember the newly fetched data, possibly replacing some older data in the cache.
+
+5
+00:00:30,000 --> 00:00:36,000
+Suppose a cache access takes 4 ns and a main memory access takes 40 ns.
+
+6
+00:00:36,000 --> 00:00:45,000
+Then an access that hits in the cache has a latency of 4 ns, but an access that misses in the cache has a latency of 44 ns.
+
+7
+00:00:45,000 --> 00:00:59,000
+The processor has to deal with the variable memory access time, perhaps by simply waiting for the access to complete, or, in modern hyper-threaded processors, it might execute an instruction or two from another programming thread.
+
+8
+00:00:59,000 --> 00:01:07,000
+The hit and miss ratios tell us the fraction of accesses which are cache hits and the fraction of accesses which are cache misses.
+
+9
+00:01:07,000 --> 00:01:10,000
+Of course, the ratios will sum to 1.
+
+10
+00:01:10,000 --> 00:01:15,000
+Using these metrics we can compute the average memory access time (AMAT).
+
+11
+00:01:15,000 --> 00:01:21,000
+Since we always check in the cache first, every access includes the cache access time (called the hit time).
+
+12
+00:01:21,000 --> 00:01:28,000
+If we miss in the cache, we have to take the additional time needed to access main memory (called the miss penalty).
+
+13
+00:01:28,000 --> 00:01:35,000
+But the main memory access only happens on some fraction of the accesses: the miss ratio tells us how often that occurs.
+
+14
+00:01:35,000 --> 00:01:42,000
+So the AMAT can be computed using the formula shown here.
+
+15
+00:01:42,000 --> 00:01:49,000
+The lower the miss ratio (or, equivalently, the higher the hit ratio), the smaller the average access time.
+
+16
+00:01:49,000 --> 00:01:53,000
+Our design goal for the cache is to achieve a high hit ratio.
+
+17
+00:01:53,000 --> 00:02:01,000
+If we have multiple levels of cache, we can apply the formula recursively to calculate the AMAT at each level of the memory.
+
+18
+00:02:01,000 --> 00:02:13,000
+Each successive level of the cache is slower, i.e., has a longer hit time, which is offset by lower miss ratio because of its increased size.
+
+19
+00:02:13,000 --> 00:02:15,000
+Let's try out some numbers.
+
+20
+00:02:15,000 --> 00:02:21,000
+Suppose the cache takes 4 processor cycles to respond, and main memory takes 100 cycles.
+
+21
+00:02:21,000 --> 00:02:25,000
+Without the cache, each memory access would take 100 cycles.
+
+22
+00:02:25,000 --> 00:02:32,000
+With the cache, a cache hit takes 4 cycles, and a cache miss takes 104 cycles.
+
+23
+00:02:32,000 --> 00:02:41,000
+What hit ratio is needed to so that the AMAT with the cache is 100 cycles, the break-even point?
+
+24
+00:02:41,000 --> 00:02:55,000
+Using the AMAT formula from the previously slide, we see that we only need a hit ratio of 4% in order for memory system of the Cache + Main Memory to perform as well as Main Memory alone.
+
+25
+00:02:55,000 --> 00:02:59,000
+The idea, of course, is that we'll be able to do much better than that.
+
+26
+00:02:59,000 --> 00:03:04,000
+Suppose we wanted an AMAT of 5 cycles.
+
+27
+00:03:04,000 --> 00:03:08,000
+Clearly most of the accesses would have to be cache hits.
+
+28
+00:03:08,000 --> 00:03:14,000
+We can use the AMAT formula to compute the necessary hit ratio.
+
+29
+00:03:14,000 --> 00:03:23,000
+Working through the arithmetic we see that 99% of the accesses must be cache hits in order to achieve an average access time of 5 cycles.
+
+30
+00:03:23,000 --> 00:03:28,000
+Could we expect to do that well when running actual programs?
+
+31
+00:03:28,000 --> 00:03:30,000
+Happily, we can come close.
+
+32
+00:03:30,000 --> 00:03:43,000
+In a simulation of the Spec CPU2000 Benchmark, the hit ratio for a standard-size level 1 cache was measured to be 97.5% over some ~10 trillion accesses.
+
+33
+00:03:43,000 --> 00:03:44,000
+[See the "All benchmarks" arithmetic-mean table at http://research.cs.wisc.edu/multifacet/misc/spec2000cache-data/]
+
+34
+00:03:44,000 --> 00:03:46,000
+Here's a start at building a cache.
+
+35
+00:03:46,000 --> 00:03:50,000
+The cache will hold many different blocks of data.
+
+36
+00:03:50,000 --> 00:03:53,000
+For now let's assume each block is an individual memory location.
+
+37
+00:03:53,000 --> 00:03:57,000
+Each data block is "tagged" with its address.
+
+38
+00:03:57,000 --> 00:04:03,000
+A combination of a data block and its associated address tag is called a cache line.
+
+39
+00:04:03,000 --> 00:04:11,000
+When an address is received from the CPU, we'll search the cache looking for a block with a matching address tag.
+
+40
+00:04:11,000 --> 00:04:15,000
+If we find a matching address tag, we have a cache hit.
+
+41
+00:04:15,000 --> 00:04:19,000
+On a read access, we'll return the data from the matching cache line.
+
+42
+00:04:19,000 --> 00:04:28,000
+On a write access, we'll update the data stored in the cache line and, at some point, update the corresponding location in main memory.
+
+43
+00:04:28,000 --> 00:04:33,000
+If no matching tag is found, we have a cache miss.
+
+44
+00:04:33,000 --> 00:04:43,000
+So we'll have to choose a cache line to use to hold the requested data, which means that some previously cached location will no longer be found in the cache.
+
+45
+00:04:43,000 --> 00:04:55,000
+For a read operation, we'll fetch the requested data from main memory, add it to the cache (updating the tag and data fields of the cache line) and, of course, return the data to the CPU.
+
+46
+00:04:55,000 --> 00:05:04,000
+On a write, we'll update the tag and data in the selected cache line and, at some point, update the corresponding location in main memory.
+
+47
+00:05:04,000 --> 00:05:11,000
+So the contents of the cache is determined by the memory requests made by the CPU.
+
+48
+00:05:11,000 --> 00:05:20,000
+If the CPU requests a recently-used address, chances are good the data will still be in the cache from the previous access to the same location.
+
+49
+00:05:20,000 --> 00:05:26,000
+As the working set slowly changes, the cache contents will be updated as needed.
+
+50
+00:05:26,000 --> 00:05:26,000
+If the entire working set can fit into the cache, most of the requests will be hits and the AMAT will be close to the cache access time.
+
+51
+00:05:26,000 --> 00:05:38,000
+So far, so good!
+
+52
+00:05:38,000 --> 00:05:51,000
+Of course, we'll need to figure how to quickly search the cache, i.e., we'll a need fast way to answer the question of whether a particular address tag can be found in some cache line.
+
+53
+00:05:51,000 --> 00:05:54,000
+That's our next topic.
+

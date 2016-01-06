@@ -1,0 +1,292 @@
+0
+00:00:00,000 --> 00:00:04,000
+A fully-associative (FA) cache has a tag comparator for each cache line.
+
+1
+00:00:04,000 --> 00:00:11,000
+So the tag field of *every* cache line in a FA cache is compared with the tag field of the incoming address.
+
+2
+00:00:11,000 --> 00:00:22,000
+Since all cache lines are searched, a particular memory location can be held in any cache line, which eliminates the problems of address conflicts causing conflict misses.
+
+3
+00:00:22,000 --> 00:00:30,000
+The cache shown here can hold 4 different 4-word blocks, regardless of their address.
+
+4
+00:00:30,000 --> 00:00:39,000
+The example from the end of the previous segment required a cache that could hold two 3-word blocks, one for the instructions in the loop, and one for the data words.
+
+5
+00:00:39,000 --> 00:00:52,000
+This FA cache would use two of its cache lines to perform that task and achieve a 100% hit ratio regardless of the addresses of the instruction and data blocks.
+
+6
+00:00:52,000 --> 00:00:58,000
+FA caches are very flexible and have high hit ratios for most applications.
+
+7
+00:00:58,000 --> 00:01:01,000
+Their only downside is cost.
+
+8
+00:01:01,000 --> 00:01:14,000
+The inclusion of a tag comparator for each cache line to implement the parallel search for a tag match adds substantially the amount of circuitry required when there are many cache lines.
+
+9
+00:01:14,000 --> 00:01:25,000
+Even the use of hybrid storage/comparison circuitry, called a content-addressable memory, doesn't make a big dent in the overall cost of a FA cache.
+
+10
+00:01:25,000 --> 00:01:30,000
+DM caches searched only a single cache line.
+
+11
+00:01:30,000 --> 00:01:33,000
+FA caches search all cache lines.
+
+12
+00:01:33,000 --> 00:01:39,000
+Is there a happy middle ground where some small number of cache lines are searched in parallel?
+
+13
+00:01:39,000 --> 00:01:40,000
+Yes!
+
+14
+00:01:40,000 --> 00:01:51,000
+If you look closely at the diagram of the FA cache shown here, you'll see it looks like four 1-line DM caches operating in parallel.
+
+15
+00:01:51,000 --> 00:01:57,000
+What would happen if we designed a cache with four multi-line DM caches operating in parallel?
+
+16
+00:01:57,000 --> 00:02:02,000
+The result would be what we call an 4-way set-associative (SA) cache.
+
+17
+00:02:02,000 --> 00:02:11,000
+An N-way SA cache is really just N DM caches (let's call them sub-caches) operating in parallel.
+
+18
+00:02:11,000 --> 00:02:21,000
+Each of the N sub-caches compares the tag field of the incoming address with the tag field of the cache line selected by the index bits of the incoming address.
+
+19
+00:02:21,000 --> 00:02:31,000
+The N cache lines searched on a particular request form a search "set" and the desired location might be held in any member of the set.
+
+20
+00:02:31,000 --> 00:02:47,000
+The 4-way SA cache shown here has 8 cache lines in each sub-cache, so each set contains 4 cache lines (one from each sub-cache) and there are a total of 8 sets (one for each line of the sub-caches).
+
+21
+00:02:47,000 --> 00:02:56,000
+An N-way SA cache can accommodate up to N blocks whose addresses map to the same cache index.
+
+22
+00:02:56,000 --> 00:03:04,000
+So access to up to N blocks with conflicting addresses can still be accommodated in this cache without misses.
+
+23
+00:03:04,000 --> 00:03:15,000
+This a big improvement over a DM cache where an address conflict will cause the current resident of a cache line to be evicted in favor of the new request.
+
+24
+00:03:15,000 --> 00:03:25,000
+And an N-way SA cache can have a very large number of cache lines but still only have to pay the cost of N tag comparators.
+
+25
+00:03:25,000 --> 00:03:34,000
+This is a big improvement over a FA cache where a large number of cache lines would require a large number of comparators.
+
+26
+00:03:34,000 --> 00:03:45,000
+So N-way SA caches are a good compromise between a conflict-prone DM cache and the flexible but very expensive FA cache.
+
+27
+00:03:45,000 --> 00:03:52,000
+Here's a slightly more detailed diagram, in this case of a 3-way 8-set cache.
+
+28
+00:03:52,000 --> 00:04:00,000
+Note that there's no constraint that the number of ways be a power of two since we aren't using any address bits to select a particular way.
+
+29
+00:04:00,000 --> 00:04:06,000
+This means the cache designer can fine tune the cache capacity to fit her space budget.
+
+30
+00:04:06,000 --> 00:04:14,000
+Just to review the terminology: the N cache lines that will be searched for a particular cache index are called a set.
+
+31
+00:04:14,000 --> 00:04:18,000
+And each of N sub-caches is called a way.
+
+32
+00:04:18,000 --> 00:04:23,000
+The hit logic in each "way" operates in parallel with the logic in other ways.
+
+33
+00:04:23,000 --> 00:04:29,000
+Is it possible for a particular address to be matched by more than one way?
+
+34
+00:04:29,000 --> 00:04:36,000
+That possibility isn't ruled out by the hardware, but the SA cache is managed so that doesn't happen.
+
+35
+00:04:36,000 --> 00:04:46,000
+Assuming we write the data fetched from DRAM during a cache miss into a single sub-cache -- we'll talk about how to choose that way in a minute --
+
+36
+00:04:46,000 --> 00:04:51,000
+there's no possibility that more than one sub-cache will ever match an incoming address.
+
+37
+00:04:51,000 --> 00:04:53,000
+How many ways to do we need?
+
+38
+00:04:53,000 --> 00:04:59,000
+We'd like enough ways to avoid the cache line conflicts we experienced with the DM cache.
+
+39
+00:04:59,000 --> 00:05:10,000
+Looking at the graph we saw earlier of memory accesses vs. time, we see that in any time interval there are only so many potential address conflicts that we need to worry about.
+
+40
+00:05:10,000 --> 00:05:17,000
+The mapping from addresses to cache lines is designed to avoid conflicts between neighboring locations.
+
+41
+00:05:17,000 --> 00:05:24,000
+So we only need to worry about conflicts between the different regions: code, stack and data.
+
+42
+00:05:24,000 --> 00:05:33,000
+In the examples shown here there are three such regions, maybe 4 if you need two data regions to support copying from one data region to another.
+
+43
+00:05:33,000 --> 00:05:42,000
+If the time interval is particularly large, we might need double that number to avoid conflicts between accesses early in the time interval and accesses late in the time interval.
+
+44
+00:05:42,000 --> 00:05:49,000
+The point is that a small number of ways should be sufficient to avoid most cache line conflicts in the cache.
+
+45
+00:05:49,000 --> 00:06:00,000
+As with block size, it's possible to have too much of a good thing: there's an optimum number of ways that minimizes the AMAT.
+
+46
+00:06:00,000 --> 00:06:14,000
+Beyond that point, the additional circuity needed to combine the hit signals from a large number of ways will start have a significant propagation delay of its own, adding directly to the cache hit time and the AMAT.
+
+47
+00:06:14,000 --> 00:06:21,000
+More to the point, the chart on the left shows that there's little additional impact on the miss ratio beyond 4 to 8 ways.
+
+48
+00:06:21,000 --> 00:06:32,000
+For most programs, an 8-way set-associative cache with a large number of sets will perform on a par with the much more-expensive FA cache of equivalent capacity.
+
+49
+00:06:32,000 --> 00:06:39,000
+There's one final issue to resolve with SA and FA caches.
+
+50
+00:06:39,000 --> 00:06:46,000
+When there's a cache miss, which cache line should be chosen to hold the data that will be fetched from main memory?
+
+51
+00:06:46,000 --> 00:06:55,000
+That's not an issue with DM caches, since each data block can only be held in one particular cache line, determined by its address.
+
+52
+00:06:55,000 --> 00:07:03,000
+But in N-way SA caches, there are N possible cache lines to choose from, one in each of the ways.
+
+53
+00:07:03,000 --> 00:07:07,000
+And in a FA cache, any of the cache lines can be chosen.
+
+54
+00:07:07,000 --> 00:07:10,000
+So, how to choose?
+
+55
+00:07:10,000 --> 00:07:17,000
+Our goal is to choose to replace the contents of the cache line which will minimize the impact on the hit ratio in the future.
+
+56
+00:07:17,000 --> 00:07:25,000
+The optimal choice is to replace the block that is accessed furthest in the future (or perhaps is never accessed again).
+
+57
+00:07:25,000 --> 00:07:28,000
+But that requires knowing the future...
+
+58
+00:07:28,000 --> 00:07:42,000
+Here's an idea: let's predict future accesses by looking a recent accesses and applying the principle of locality. d7.36 If a block has not been recently accessed, it's less likely to be accessed in the near future.
+
+59
+00:07:42,000 --> 00:07:53,000
+That suggests the least-recently-used replacement strategy, usually referred to as LRU: replace the block that was accessed furthest in the past.
+
+60
+00:07:53,000 --> 00:08:05,000
+LRU works well in practice, but requires us to keep a list ordered by last use for each set of cache lines, which would need to be updated on each cache access.
+
+61
+00:08:05,000 --> 00:08:11,000
+When we needed to choose which member of a set to replace, we'd choose the last cache line on this list.
+
+62
+00:08:11,000 --> 00:08:23,000
+For an 8-way SA cache there are 8! possible orderings, so we'd need log2(8!) = 16 state bits to encode the current ordering.
+
+63
+00:08:23,000 --> 00:08:27,000
+The logic to update these state bits on each access isn't cheap.
+
+64
+00:08:27,000 --> 00:08:33,000
+Basically you need a lookup table to map the current 16-bit value to the next 16-bit value.
+
+65
+00:08:33,000 --> 00:08:40,000
+So most caches implement an approximation to LRU where the update function is much simpler to compute.
+
+66
+00:08:40,000 --> 00:08:44,000
+There are other possible replacement policies:
+
+67
+00:08:44,000 --> 00:08:50,000
+First-in, first-out, where the oldest cache line is replaced regardless of when it was last accessed.
+
+68
+00:08:50,000 --> 00:08:56,000
+And Random, where some sort of pseudo-random number generator is used to select the replacement.
+
+69
+00:08:56,000 --> 00:09:00,000
+All replacement strategies except for random can be defeated.
+
+70
+00:09:00,000 --> 00:09:10,000
+If you know a cache's replacement strategy you can design a program that will have an abysmal hit rate by accessing addresses you know the cache just replaced.
+
+71
+00:09:10,000 --> 00:09:24,000
+I'm not sure I care about how well a program designed to get bad performance runs on my system, but the point is that most replacement strategies will occasionally cause a particular program to execute much more slowly than expected.
+
+72
+00:09:24,000 --> 00:09:32,000
+When all is said and done, an LRU replacement strategy or a close approximation is a reasonable choice.
+

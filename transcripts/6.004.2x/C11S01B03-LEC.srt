@@ -1,0 +1,160 @@
+0
+00:00:00,000 --> 00:00:07,000
+Well, we'll need at least one MOSFET to serve as the access FET so we can select which bits will be affected by read and write operations.
+
+1
+00:00:07,000 --> 00:00:16,000
+We can use a simple capacitor for storage, where the value of a stored bit is represented by voltage across the plates of the capacitor.
+
+2
+00:00:16,000 --> 00:00:21,000
+The resulting circuit is termed a dynamic random-access memory (DRAM) cell.
+
+3
+00:00:21,000 --> 00:00:29,000
+If the capacitor voltage exceeds a certain threshold, we're storing a "1" bit, otherwise we're storing a "0".
+
+4
+00:00:29,000 --> 00:00:37,000
+The amount of charge on the capacitor, which determines the speed and reliability of reading the stored value, is proportional to the capacitance.
+
+5
+00:00:37,000 --> 00:00:48,000
+We can increase the capacitance by increasing the dielectric constant of the insulating layer between the two plates of the capacitor, increasing the area of the plates, or by decreasing the the distance between the plates.
+
+6
+00:00:48,000 --> 00:00:52,000
+All of these are constantly being improved.
+
+7
+00:00:52,000 --> 00:00:56,000
+A cross section of a modern DRAM cell is shown here.
+
+8
+00:00:56,000 --> 00:01:02,000
+The capacitor is formed in a large trench dug into the substrate material of the integrated circuit.
+
+9
+00:01:02,000 --> 00:01:08,000
+Increasing the depth of the trench will increase the area of the capacitor plates without increasing the cell's area.
+
+10
+00:01:08,000 --> 00:01:17,000
+The wordline forms the gate of the N-FET access transistor connecting the outer plate of the capacitor to the bitline.
+
+11
+00:01:17,000 --> 00:01:26,000
+A very thin insulating layer separates the outer plate from the inner plate, which is connected to some reference voltage (shown as GND in this diagram).
+
+12
+00:01:26,000 --> 00:01:34,000
+You can Google "trench capacitor" to get the latest information on the dimensions and materials used in the construction of the capacitor.
+
+13
+00:01:34,000 --> 00:01:40,000
+The resulting circuit is quite compact: about 20-times less area/bit than an SRAM bit cell.
+
+14
+00:01:40,000 --> 00:01:42,000
+There are some challenges however.
+
+15
+00:01:42,000 --> 00:01:52,000
+There's no circuitry to main the static charge on the capacitor, so stored charge will leak from the outer plate of the capacitor, hence the name "dynamic memory".
+
+16
+00:01:52,000 --> 00:02:02,000
+The leakage is caused by small picoamp currents through the PN junction with the surrounding substrate, or subthreshold conduction of the access FET even when it's turned "off".
+
+17
+00:02:02,000 --> 00:02:09,000
+This limits the amount of time we can leave the capacitor unattended and still expect to read the stored value.
+
+18
+00:02:09,000 --> 00:02:21,000
+This means we'll have to arrange to read then re-write each bit cell (called a "refresh" cycle) every 10ms or so, adding to the complexity of the DRAM interface circuitry.
+
+19
+00:02:21,000 --> 00:02:31,000
+DRAM write operations are straightforward: simply turn on the access FET with the wordline and charge or discharge the storage capacitor through the bitline.
+
+20
+00:02:31,000 --> 00:02:33,000
+Reads are bit more complicated.
+
+21
+00:02:33,000 --> 00:02:42,000
+First the bitline is precharged to some intermediate voltage, e.g., VDD/2, and then the precharge circuitry is disconnected.
+
+22
+00:02:42,000 --> 00:02:53,000
+The wordline is activated, connecting the storage capacitor of the selected cell to the bitline causing the charge on the capacitor to be shared with the charge stored by the capacitance of the bitline.
+
+23
+00:02:53,000 --> 00:03:03,000
+If the value stored by the cell capacitor is a "1", the bitline voltage will increase very slightly (e.g., a few tens of millivolts).
+
+24
+00:03:03,000 --> 00:03:07,000
+If the stored value is a "0", the bitline voltage will decrease slightly.
+
+25
+00:03:07,000 --> 00:03:13,000
+Sense amplifiers are used to detect this small voltage change to produce a digital output value.
+
+26
+00:03:13,000 --> 00:03:24,000
+This means that read operations wipe out the information stored in the bit cell, which must then be rewritten with the detected value at the end of the read operation.
+
+27
+00:03:24,000 --> 00:03:33,000
+DRAM circuitry is usually organized to have "wide" rows, i.e., multiple consecutive locations are read in a single access.
+
+28
+00:03:33,000 --> 00:03:38,000
+This particular block of locations is selected by the DRAM row address.
+
+29
+00:03:38,000 --> 00:03:44,000
+Then the DRAM column address is used to select a particular location from the block to be returned.
+
+30
+00:03:44,000 --> 00:03:55,000
+If we want to read multiple locations in a single row, then we only need to send a new column address and the DRAM will respond with that location without having to access the bit cells again.
+
+31
+00:03:55,000 --> 00:04:02,000
+The first access to a row has a long latency, but subsequent accesses to the same row have very low latency.
+
+32
+00:04:02,000 --> 00:04:07,000
+As we'll see, we'll be able to use fast column accesses to our advantage.
+
+33
+00:04:07,000 --> 00:04:17,000
+In summary, DRAM bit cells consist of a single access FET connected to a storage capacitor that's cleverly constructed to take up as little area as possible.
+
+34
+00:04:17,000 --> 00:04:31,000
+DRAMs must rewrite the contents of bit cells after they are read and every cell must be read and written periodically to ensure that the stored charge is refreshed before it's corrupted by leakage currents.
+
+35
+00:04:31,000 --> 00:04:46,000
+DRAMs have much higher capacities than SRAMs because of the small size of the DRAM bit cells, but the complexity of the DRAM interface circuitry means that the initial access to a row of locations is quite a bit slower than an SRAM access.
+
+36
+00:04:46,000 --> 00:04:52,000
+However subsequent accesses to the same row happen at speeds close to that of SRAM accesses.
+
+37
+00:04:52,000 --> 00:04:57,000
+Both SRAMs and DRAMs will store values as long as their circuitry has power.
+
+38
+00:04:57,000 --> 00:05:01,000
+But if the circuitry is powered down, the stored bits will be lost.
+
+39
+00:05:01,000 --> 00:05:10,000
+For long-term storage we will need to use non-volatile memory technologies, the topic of the next lecture segment.
+

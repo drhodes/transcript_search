@@ -25,7 +25,7 @@ function SearchModule() {
     // ------------------------------------------------------------------
     // Set aside a place for loading the transcript into
     var JSON_TRANSCRIPTS = {};
-    var url = "https://drhodes.github.io/transcript_search/js/json-transcripts/6.004.2x.json";
+    var url = "https://drhodes.github.io/transcript_search/js/json-transcripts/6.004.3x.json";
     $.getJSON(url, function(json) {
         JSON_TRANSCRIPTS = json;
         console.log( "JSON Data: " + json );
@@ -162,10 +162,9 @@ function SearchModule() {
     return refreshResults;
 }
 
-
 var app = angular.module('app', []);
 app.controller('myCtrl', function($scope) {
-    var course = "6.004.2x";
+    var course = "6.004.3x";
     // Eventually uncomment this code and use the params to 
     // var params = getJsonFromUrl();
     // if (params.course != "6.004.2x") {

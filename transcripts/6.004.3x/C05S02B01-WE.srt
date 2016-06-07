@@ -1,0 +1,324 @@
+0
+00:00:00,000 --> 00:00:06,000
+Virtual memory allows programs to behave as if they have a larger memory than they actually do.
+
+1
+00:00:06,000 --> 00:00:14,000
+The way this works is by using virtual addresses, which refer to addresses on disk, in our programs.
+
+2
+00:00:14,000 --> 00:00:23,000
+The virtual addresses are translated into physical addresses using the page map which is a lookup table that has one entry per virtual page.
+
+3
+00:00:23,000 --> 00:00:31,000
+The page map knows whether the virtual page is in physical memory and if so it immediately returns the physical page number.
+
+4
+00:00:31,000 --> 00:00:42,000
+If the page is not in physical memory, then this causes a fault which means that the virtual page must be brought in from disk to physical memory before it can be accessed.
+
+5
+00:00:42,000 --> 00:00:52,000
+To do this the least recently used (LRU) page in the physical memory is removed to make room for the address that is currently being requested.
+
+6
+00:00:52,000 --> 00:00:57,000
+The page map is also updated with the new mapping of virtual to physical pages.
+
+7
+00:00:57,000 --> 00:01:04,000
+Since bringing data to and from disk is an expensive operation, data is moved in chunks.
+
+8
+00:01:04,000 --> 00:01:10,000
+This makes sense because of the concept of locality which we studied as part of our Caches unit.
+
+9
+00:01:10,000 --> 00:01:21,000
+The idea is that instructions, or data, that are close to the current address are likely to be accessed as well, so it makes sense to fetch more than one word of data at a time.
+
+10
+00:01:21,000 --> 00:01:32,000
+This is especially true if the cost of fetching the first word is significantly higher than the cost of fetching adjacent memory locations as is the case with accesses to disk.
+
+11
+00:01:32,000 --> 00:01:37,000
+So data is moved back and forth from disk in pages.
+
+12
+00:01:37,000 --> 00:01:41,000
+The size of a page is the same in both virtual and physical memory.
+
+13
+00:01:41,000 --> 00:01:45,000
+Lets look at an example of how virtual memory is used.
+
+14
+00:01:45,000 --> 00:01:59,000
+While it is usually the case that the virtual address space is larger than the physical address space, this is not a requirement and in this problem the virtual address space happens to be smaller than the physical address space.
+
+15
+00:01:59,000 --> 00:02:06,000
+Specifically, virtual addresses are 16 bits long so they can address 2^16 bytes.
+
+16
+00:02:06,000 --> 00:02:14,000
+Physical addresses are 20 bits long so that means that our physical memory is of size 2^20 bytes.
+
+17
+00:02:14,000 --> 00:02:20,000
+Our page size is 2^8 bytes or 256 bytes per page.
+
+18
+00:02:20,000 --> 00:02:30,000
+This means that the 16 bit virtual address consists of 8 bits of page offset and another 8 bits for the virtual page number (or VPN).
+
+19
+00:02:30,000 --> 00:02:39,000
+The 20 bit physical address consists of the same 8 bit page offset and another 12 bits for the physical page number (or PPN).
+
+20
+00:02:39,000 --> 00:02:46,000
+The first question we want to consider is what is the size of the page map in this example?
+
+21
+00:02:46,000 --> 00:02:53,000
+Recall that a page map has 1 entry per virtual page in order to map  each virtual page to a physical page.
+
+22
+00:02:53,000 --> 00:03:02,000
+This means that the number of entries in the page map is 2^8 where 8 is the number of bits in the VPN.
+
+23
+00:03:02,000 --> 00:03:11,000
+The size of each page map entry is 14 bits, 12 for the PPN, 1 for the dirty bit and 1 for the resident bit.
+
+24
+00:03:11,000 --> 00:03:22,000
+Suppose that you are told that the page size is doubled in size so that there are now 2^9 bytes per page, but the size of your physical and virtual addresses remain the same.
+
+25
+00:03:22,000 --> 00:03:28,000
+We would like to determine what effect this change would have on some of the page map attributes.
+
+26
+00:03:28,000 --> 00:03:33,000
+The first question is how does the size of each page map entry in bits change?
+
+27
+00:03:33,000 --> 00:03:47,000
+Since the size of a physical address continues to be 20 bits long, then the change in page offset size from 8 to 9 bits implies that the size of the PPN decreased by 1 bit from 12 to 11.
+
+28
+00:03:47,000 --> 00:03:53,000
+This implies that the size of each page map entry also decreases by 1 bit.
+
+29
+00:03:53,000 --> 00:03:58,000
+How are the number of entries in the page map affected by the change in page size?
+
+30
+00:03:58,000 --> 00:04:09,000
+Since the number of entries in a page map is equal to the number of  virtual pages, that means that if the size of each page doubled, then  we have half as many virtual pages.
+
+31
+00:04:09,000 --> 00:04:15,000
+This is shown in the size of the VPN which has decreased from 8 to 7  bits.
+
+32
+00:04:15,000 --> 00:04:24,000
+This also means that the number of entries in the page map have halved  in size from 2^8 entries down to 2^7 entries.
+
+33
+00:04:24,000 --> 00:04:31,000
+How about the number of accesses of the page map that are required to translate a single virtual address?
+
+34
+00:04:31,000 --> 00:04:37,000
+This parameter does not change as a result of the pages doubling in size.
+
+35
+00:04:37,000 --> 00:04:43,000
+Suppose we return to our original page size of 256 bytes per page.
+
+36
+00:04:43,000 --> 00:04:49,000
+We now execute these two lines of code, a load followed by a store operation.
+
+37
+00:04:49,000 --> 00:05:04,000
+The comment after each instruction shows us the value of the PC when each of the instructions is executed, so it is telling us that the load instruction is at address 0x1FC and the store instruction is at address 0x200.
+
+38
+00:05:04,000 --> 00:05:13,000
+To execute these two lines of code, we must first fetch each instruction and then perform the data access required by that instruction.
+
+39
+00:05:13,000 --> 00:05:21,000
+Since our pages are 2^8 bytes long, that means that the bottom 8 bits of our address correspond to the page offset.
+
+40
+00:05:21,000 --> 00:05:28,000
+Notice that our instruction addresses are specified in hex so 8 bits correspond to the bottom 2 hex characters.
+
+41
+00:05:28,000 --> 00:05:39,000
+This means that when accessing the LD instruction, the VPN = 1 (which is what remains of our virtual address after removing the bottom 8 bits.)
+
+42
+00:05:39,000 --> 00:05:44,000
+The data accessed by the LD instruction comes from VPN 3.
+
+43
+00:05:44,000 --> 00:05:53,000
+Next we fetch the store instruction from VPN 2, and finally we store an updated value to VPN 6.
+
+44
+00:05:53,000 --> 00:06:02,000
+Given the page map shown here, we would like to determine the unique physical addresses that are accessed by this code segment.
+
+45
+00:06:02,000 --> 00:06:07,000
+Recall that the four virtual addresses that will be accessed are:
+
+46
+00:06:07,000 --> 00:06:11,000
+0x1FC which is in VPN 1
+
+47
+00:06:11,000 --> 00:06:16,000
+0x34C which is in VPN 3
+
+48
+00:06:16,000 --> 00:06:20,000
+0x200 which is in VPN 2
+
+49
+00:06:20,000 --> 00:06:25,000
+and 0x604 which is in VPN 6.
+
+50
+00:06:25,000 --> 00:06:41,000
+Assume that all the code and data required to handle page faults is located at physical page 0, your goal is to determine the 5 different physical pages that will get accessed and the order in which they will get accessed by this code segment.
+
+51
+00:06:41,000 --> 00:06:45,000
+We begin by looking up VPN 1 in our page map.
+
+52
+00:06:45,000 --> 00:06:49,000
+We see that its resident bit is set to 1.
+
+53
+00:06:49,000 --> 00:06:56,000
+This means that the virtual page is in physical memory and its PPN is 0x007.
+
+54
+00:06:56,000 --> 00:07:07,000
+Thus the first physical page that we access is page 0x7, and the first physical address is determined by concatenating the PPN to the page offset.
+
+55
+00:07:07,000 --> 00:07:12,000
+This results in a physical address of 0x7FC.
+
+56
+00:07:12,000 --> 00:07:20,000
+Next, we want to load the data at virtual address 0x34C which is in VPN 3.
+
+57
+00:07:20,000 --> 00:07:26,000
+Looking up VPN 3 in our page map, we find out that its not resident in physical memory.
+
+58
+00:07:26,000 --> 00:07:33,000
+This means that we need to make room for it by removing the least recently used page from physical memory.
+
+59
+00:07:33,000 --> 00:07:40,000
+The least recently used page is VPN 2 which maps to PPN 0x602.
+
+60
+00:07:40,000 --> 00:07:53,000
+Since the dirty bit of our LRU page is 0, that means that we have not done any writes to this page while it was in physical memory so the version in physical memory and on disk are identical.
+
+61
+00:07:53,000 --> 00:08:07,000
+So to free up physical page 0x602, all we need to do is change the resident bit of VPN 2 to 0 and now we can bring VPN 3 into physical page 0x602.
+
+62
+00:08:07,000 --> 00:08:15,000
+Recall that the code for handling the page fault is in physical page 0 so the second physical page that we access is page 0.
+
+63
+00:08:15,000 --> 00:08:29,000
+The updated page map, after handling the page fault, looks like this, where the resident bit for VPN 2 has been set to 0, and PPN 0x602 is now used for VPN 3.
+
+64
+00:08:29,000 --> 00:08:36,000
+Since this is a LD operation, we are not modifying the page so the dirty bit is set to 0.
+
+65
+00:08:36,000 --> 00:08:50,000
+The physical address for virtual address 0x34C is now 0x6024C which is now in VPN 0x602.
+
+66
+00:08:50,000 --> 00:08:57,000
+Next we need to fetch the store instruction from virtual address 0x200 which is in VPN 2.
+
+67
+00:08:57,000 --> 00:09:02,000
+Since we just removed VPN 2 from physical memory we get another page fault.
+
+68
+00:09:02,000 --> 00:09:10,000
+This time we will remove the next LRU page from physical memory in order to make room for VPN 2 once again.
+
+69
+00:09:10,000 --> 00:09:20,000
+In this case, the dirty bit is set to 1 which means that we have written to PPN 0x097 after it was fetched from disk.
+
+70
+00:09:20,000 --> 00:09:34,000
+This means that the page fault handler will need to first write physical page 0x097 back to virtual page 5 before we can use physical page 0x097 for VPN 2.
+
+71
+00:09:34,000 --> 00:09:40,000
+After handling the page fault, our updated page map looks like this.
+
+72
+00:09:40,000 --> 00:09:49,000
+VPN 5 is no longer resident, and instead VPN 2 is resident in physical page 0x097.
+
+73
+00:09:49,000 --> 00:09:56,000
+In addition, we set the dirty bit to 0 because we have not made any changes to this virtual page.
+
+74
+00:09:56,000 --> 00:10:08,000
+We now know that virtual address 0x200 maps to physical address 0x09700 after the handling of the page fault.
+
+75
+00:10:08,000 --> 00:10:16,000
+Finally, we need to perform the store to virtual address 0x604 which is in VPN 6.
+
+76
+00:10:16,000 --> 00:10:25,000
+Since VPN 6 is resident in physical memory, we can access it at physical page 0x790 as shown in the page map.
+
+77
+00:10:25,000 --> 00:10:35,000
+This means that virtual address 0x604 maps to physical address 0x79004.
+
+78
+00:10:35,000 --> 00:10:46,000
+Note that because the dirty bit of VPN 6 was already a 1, we don't need to make any further modifications to the page map as a result of executing the store operation.
+
+79
+00:10:46,000 --> 00:10:52,000
+If the dirty bit had been a 0, then we would have set it to 1.
+
+80
+00:10:52,000 --> 00:11:09,000
+So the five physical pages that were accessed by this program are: page 0x7, page 0 for the page faults, page 0x602, page 0x097, and page 0x790.
+

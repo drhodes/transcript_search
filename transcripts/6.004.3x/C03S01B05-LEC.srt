@@ -1,0 +1,360 @@
+0
+00:00:00,000 --> 00:00:06,000
+Now let's turn our attention to control hazards, illustrated by the code fragment shown here.
+
+1
+00:00:06,000 --> 00:00:09,000
+Which instruction should be executed after the BNE?
+
+2
+00:00:09,000 --> 00:00:13,000
+If the value in R3 is non-zero, ADDC should be executed.
+
+3
+00:00:13,000 --> 00:00:18,000
+If the value in R3 is zero, the next instruction should be SUB.
+
+4
+00:00:18,000 --> 00:00:29,000
+If the current instruction is an explicit transfer of control (i.e., JMPs or branches), the choice of the next instruction depends on the execution of the current instruction.
+
+5
+00:00:29,000 --> 00:00:34,000
+What are the implications of this dependency on our execution pipeline?
+
+6
+00:00:34,000 --> 00:00:40,000
+How does the unpipelined implementation determine the next instruction?
+
+7
+00:00:40,000 --> 00:00:47,000
+For branches (BEQ or BNE), the value to be loaded into the program counter depends on
+
+8
+00:00:47,000 --> 00:00:52,000
+(1) the opcode, i.e., whether the instruction is a BEQ or a BNE,
+
+9
+00:00:52,000 --> 00:00:58,000
+(2) the current value of the program counter since that's used in the offset calculation, and
+
+10
+00:00:58,000 --> 00:01:06,000
+(3) the value stored in the register specified by the RA field of the instruction since that's the value tested by the branch.
+
+11
+00:01:06,000 --> 00:01:15,000
+For JMP instructions, the next value of the program counter depends once again on the opcode field and the value of the RA register.
+
+12
+00:01:15,000 --> 00:01:24,000
+For all other instructions, the next PC value depends only the opcode of the instruction and the value PC+4.
+
+13
+00:01:24,000 --> 00:01:28,000
+Exceptions also change the program counter.
+
+14
+00:01:28,000 --> 00:01:30,000
+We'll deal with them later in the lecture.
+
+15
+00:01:30,000 --> 00:01:43,000
+The control hazard is triggered by JMP and branches since their execution depends on the value in the RA register, i.e., they need to read from the register file, which happens in the RF pipeline stage.
+
+16
+00:01:43,000 --> 00:01:51,000
+Our bypass mechanisms ensure that we'll use the correct value for the RA register even if it's not yet written into the register file.
+
+17
+00:01:51,000 --> 00:02:04,000
+What we're concerned about here is that the address of the instruction following the JMP or branch will be loaded into program counter at the end of the cycle when the JMP or branch is in the RF stage.
+
+18
+00:02:04,000 --> 00:02:09,000
+But what should the IF stage be doing while all this is going on in RF stage?
+
+19
+00:02:09,000 --> 00:02:22,000
+The answer is that in the case of JMPs and taken branches, we don't know what the IF stage should be doing until those instructions are able to access the value of the RA register in the RF stage.
+
+20
+00:02:22,000 --> 00:02:29,000
+One solution is to stall the IF stage until the RF stage can compute the necessary result.
+
+21
+00:02:29,000 --> 00:02:33,000
+This was the first of our general strategies for dealing with hazards.
+
+22
+00:02:33,000 --> 00:02:35,000
+How would this work?
+
+23
+00:02:35,000 --> 00:02:43,000
+If the opcode in the RF stage is JMP, BEQ, or BNE, stall the IF stage for one cycle.
+
+24
+00:02:43,000 --> 00:02:56,000
+In the example code shown here, assume that the value in R3 is non-zero when the BNE is executed, i.e., that the instruction following BNE should be the ADDC at the top of the loop.
+
+25
+00:02:56,000 --> 00:03:05,000
+The pipeline diagram shows the effect we're trying to achieve: a NOP is inserted into the pipeline in cycles 4 and 8.
+
+26
+00:03:05,000 --> 00:03:12,000
+Then execution resumes in the next cycle after the RF stage determines what instruction comes next.
+
+27
+00:03:12,000 --> 00:03:26,000
+Note, by the way, that we're relying on our bypass logic to deliver the correct value for R3 from the MEM stage since the ADDC instruction that wrote into R3 is still in the pipeline, i.e., we have a data hazard to deal with too!
+
+28
+00:03:26,000 --> 00:03:37,000
+Looking at, say, the WB stage in the pipeline diagram, we see it takes 4 cycles to execute one iteration of our 3-instruction loop.
+
+29
+00:03:37,000 --> 00:03:43,000
+So the effective CPI is 4/3, an increase of 33%.
+
+30
+00:03:43,000 --> 00:03:51,000
+Using stall to deal with control hazards has had an impact on the instruction throughput of our execution pipeline.
+
+31
+00:03:51,000 --> 00:03:57,000
+We've already seen the logic needed to introduce NOPs into the pipeline.
+
+32
+00:03:57,000 --> 00:04:05,000
+In this case, we add a mux to the instruction path in the IF stage, controlled by the IRSrc_IF signal.
+
+33
+00:04:05,000 --> 00:04:11,000
+We use the superscript on the control signals to indicate which pipeline stage holds the logic they control.
+
+34
+00:04:11,000 --> 00:04:24,000
+If the opcode in the RF stage is JMP, BEQ, or BNE we set IRSrc_IF to 1, which causes a NOP to replace the instruction that was being read from main memory.
+
+35
+00:04:24,000 --> 00:04:35,000
+And, of course, we'll be setting the PCSEL control signals to select the correct next PC value, so the IF stage will fetch the desired follow-on instruction in the next cycle.
+
+36
+00:04:35,000 --> 00:04:41,000
+If we replace an instruction with NOP, we say we "annulled" the instruction.
+
+37
+00:04:41,000 --> 00:04:50,000
+The branch instructions in the Beta ISA make their branch decision in the RF stage since they only need the value in register RA.
+
+38
+00:04:50,000 --> 00:04:55,000
+But suppose the ISA had a branch where the branch decision was made in ALU stage.
+
+39
+00:04:55,000 --> 00:05:07,000
+When the branch decision is made in the ALU stage, we need to introduce two NOPs into the pipeline, replacing the now unwanted instructions in the RF and IF stages.
+
+40
+00:05:07,000 --> 00:05:11,000
+This would increase the effective CPI even further.
+
+41
+00:05:11,000 --> 00:05:18,000
+But the tradeoff is that the more complex branches may reduce the number of instructions in the program.
+
+42
+00:05:18,000 --> 00:05:25,000
+If we annul instructions in all the earlier pipeline stages, this is called "flushing the pipeline".
+
+43
+00:05:25,000 --> 00:05:36,000
+Since flushing the pipeline has a big impact on the effective CPI, we do it when it's the only way to ensure the correct behavior of the execution pipeline.
+
+44
+00:05:36,000 --> 00:05:42,000
+We can be smarter about when we choose to flush the pipeline when executing branches.
+
+45
+00:05:42,000 --> 00:05:59,000
+If the branch is not taken, it turns out that the pipeline has been doing the right thing by fetching the instruction following the branch.
+
+46
+00:05:59,000 --> 00:05:58,000
+Starting execution of an instruction even when we're unsure whether we really want it executed is called "speculation".
+
+47
+00:05:58,000 --> 00:06:08,000
+Speculative execution is okay if we're able to annul the instruction before it has an effect on the CPU state, e.g., by writing into the register file or main memory.
+
+48
+00:06:08,000 --> 00:06:21,000
+Since these state changes (called "side effects") happen in the later pipeline stages, an instruction can progress through the IF, RF, and ALU stages before we have to make a final decision about whether it should be annulled.
+
+49
+00:06:21,000 --> 00:06:25,000
+How does speculation help with control hazards?
+
+50
+00:06:25,000 --> 00:06:33,000
+Guessing that the next value of the program counter is PC+4 is correct for all but JMPs and taken branches.
+
+51
+00:06:33,000 --> 00:06:41,000
+Here's our example again, but this time let's assume that the BNE is not taken, i.e., that the value in R3 is zero.
+
+52
+00:06:41,000 --> 00:06:46,000
+The SUB instruction enters the pipeline at the start of cycle 4.
+
+53
+00:06:46,000 --> 00:06:50,000
+At the end of cycle 4, we know whether or not to annul the SUB.
+
+54
+00:06:50,000 --> 00:06:57,000
+If the branch is not taken, we want to execute the SUB instruction, so we just let it continue down the pipeline.
+
+55
+00:06:57,000 --> 00:07:05,000
+In other words, instead of always annulling the instruction following branch, we only annul it if the branch was taken.
+
+56
+00:07:05,000 --> 00:07:12,000
+If the branch is not taken, the pipeline has speculated correctly and no instructions need to be annulled.
+
+57
+00:07:12,000 --> 00:07:20,000
+However if the BNE is taken, the SUB is annulled at the end of cycle 4 and a NOP is executed in cycle 5.
+
+58
+00:07:20,000 --> 00:07:24,000
+So we only introduce a bubble in the pipeline when there's a taken branch.
+
+59
+00:07:24,000 --> 00:07:30,000
+Fewer bubbles will decrease the impact of annulment on the effective CPI.
+
+60
+00:07:30,000 --> 00:07:40,000
+We'll be using the same data path circuitry as before, we'll just be a bit more clever about when the value of the IRSrc_IF control signal is set to 1.
+
+61
+00:07:40,000 --> 00:07:47,000
+Instead of setting it to 1 for all branches, we only set it to 1 when the branch is taken.
+
+62
+00:07:47,000 --> 00:07:55,000
+Our naive strategy of always speculating that the next instruction comes from PC+4 is wrong for JMPs and taken branches.
+
+63
+00:07:55,000 --> 00:08:05,000
+Looking at simulated execution traces, we'll see that this error in speculation leads to about 10% higher effective CPI.
+
+64
+00:08:05,000 --> 00:08:06,000
+Can we do better?
+
+65
+00:08:06,000 --> 00:08:11,000
+This is an important question for CPUs with deep pipelines.
+
+66
+00:08:11,000 --> 00:08:20,000
+For example, Intel's Nehalem processor from 2009 resolves the more complex x86 branch instructions quite late in the pipeline.
+
+67
+00:08:20,000 --> 00:08:32,000
+Since Nehalem is capable of executing multiple instructions each cycle, flushing the pipeline in Nehalem actually annuls the execution of many instructions, resulting in a considerable hit on the CPI.
+
+68
+00:08:32,000 --> 00:08:41,000
+Like many modern processor implementations, Nehalem has a much more sophisticated speculation mechanism.
+
+69
+00:08:41,000 --> 00:08:49,000
+Rather than always guessing the next instruction is at PC+4, it only does that for non-branch instructions.
+
+70
+00:08:49,000 --> 00:08:59,000
+For branches, it predicts the behavior of each individual branch based on what the branch did last time it was executed and some knowledge of how the branch is being used.
+
+71
+00:08:59,000 --> 00:09:09,000
+For example, backward branches at the end of loops, which are taken for all but the final iteration of the loop, can be identified by their negative branch offset values.
+
+72
+00:09:09,000 --> 00:09:20,000
+Nehalem can even determine if there's correlation between branch instructions, using the results of an another, earlier branch to speculate on the branch decision of the current branch.
+
+73
+00:09:20,000 --> 00:09:32,000
+With these sophisticated strategies, Nehalem's speculation is correct 95% to 99% of the time, greatly reducing the impact of branches on the effective CPI.
+
+74
+00:09:32,000 --> 00:09:38,000
+There's also the lazy option of changing the ISA to deal with control hazards.
+
+75
+00:09:38,000 --> 00:09:45,000
+For example, we could change the ISA to specify that the instruction following a jump or branch is always executed.
+
+76
+00:09:45,000 --> 00:09:49,000
+In other words the transfer of control happens *after* the next instruction.
+
+77
+00:09:49,000 --> 00:09:55,000
+This change ensures that the guess of PC+4 as the address of the next instruction is always correct!
+
+78
+00:09:55,000 --> 00:10:08,000
+In the example shown here, assuming we changed the ISA, we can reorganize the execution order of the loop to place the MUL instruction after the BNE instruction, in the so-called "branch delay slot".
+
+79
+00:10:08,000 --> 00:10:16,000
+Since the instruction in the branch delay slot is always executed, the MUL instruction will be executed during each iteration of the loop.
+
+80
+00:10:16,000 --> 00:10:20,000
+The resulting execution is shown in this pipeline diagram.
+
+81
+00:10:20,000 --> 00:10:29,000
+Assuming we can find an appropriate instruction to place in the delay slot, the branch will have zero impact on the effective CPI.
+
+82
+00:10:29,000 --> 00:10:32,000
+Are branch delay slots a good idea?
+
+83
+00:10:32,000 --> 00:10:38,000
+Seems like they reduce the negative impact that branches might have on instruction throughput.
+
+84
+00:10:38,000 --> 00:10:45,000
+The downside is that only half the time can we find instructions to move to the branch delay slot.
+
+85
+00:10:45,000 --> 00:10:51,000
+The other half of the time we have to fill it with an explicit NOP instruction, increasing the size of the code.
+
+86
+00:10:51,000 --> 00:10:59,000
+And if we make the branch decision later in the pipeline, there are more branch delay slots, which would be even harder to fill.
+
+87
+00:10:59,000 --> 00:11:06,000
+In practice, it turns out that branch prediction works better than delay slots in reducing the impact of branches.
+
+88
+00:11:06,000 --> 00:11:14,000
+So, once again we see that it's problematic to alter the ISA to improve the throughput of pipelined execution.
+
+89
+00:11:14,000 --> 00:11:25,000
+ISAs outlive implementations, so it's best not to change the execution semantics to deal with performance issues created by a particular implementation.
+

@@ -1,0 +1,64 @@
+0
+00:00:00,000 --> 00:00:05,000
+So here's the final version of our 5-stage pipelined data path.
+
+1
+00:00:05,000 --> 00:00:11,000
+To deal with data hazards we've added stall logic to the IF and RF input registers.
+
+2
+00:00:11,000 --> 00:00:24,000
+We've also added bypass muxes on the output of the register file read ports so we can route values from later in the data path if we need to access a register value that's been computed but not yet written to the register file.
+
+3
+00:00:24,000 --> 00:00:32,000
+We also made a provision to insert NOPs into the pipeline after the RF stage if the IF and RF stages are stalled.
+
+4
+00:00:32,000 --> 00:00:39,000
+To deal with control hazards, we speculate that the next instruction is at PC+4.
+
+5
+00:00:39,000 --> 00:00:47,000
+But for JMPs and taken branches, that guess is wrong so we added a provision for annulling the instruction in the IF stage.
+
+6
+00:00:47,000 --> 00:00:52,000
+To deal with exceptions and interrupts we added instruction muxes in all but the final pipeline stage.
+
+7
+00:00:52,000 --> 00:01:02,000
+An instruction that causes an exception is replaced by our magic BNE instruction to capture its PC+4 value.
+
+8
+00:01:02,000 --> 00:01:05,000
+And instructions in earlier stages are annulled.
+
+9
+00:01:05,000 --> 00:01:14,000
+All this extra circuitry has been added to ensure that pipelined execution gives the same result as unpipelined execution.
+
+10
+00:01:14,000 --> 00:01:23,000
+The use of bypassing and branch prediction ensures that data and control hazards have only a small negative impact on the effective CPI.
+
+11
+00:01:23,000 --> 00:01:29,000
+This means that the much shorter clock period translates to a large increase in instruction throughput.
+
+12
+00:01:29,000 --> 00:01:35,000
+It's worth remembering the strategies we used to deal with hazards: stalling, bypassing and speculation.
+
+13
+00:01:35,000 --> 00:01:45,000
+Most execution issues can be dealt with using one of these strategies, so keep these in mind if you ever need to design a high-performance pipelined system.
+
+14
+00:01:45,000 --> 00:01:48,000
+This completes our discussion of pipelining.
+
+15
+00:01:48,000 --> 00:01:55,000
+We'll explore other avenues to higher processor performance in the last lecture, which discusses parallel processing.
+

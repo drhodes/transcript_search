@@ -1,0 +1,236 @@
+0
+00:00:00,000 --> 00:00:08,000
+Another service provided by operating system is dealing properly with the attempt to execute instructions with "illegal" opcodes.
+
+1
+00:00:08,000 --> 00:00:15,000
+Illegal is quotes because that just means opcodes whose operations aren't implemented directly by the hardware.
+
+2
+00:00:15,000 --> 00:00:21,000
+As we'll see, it's possible extend the functionality of the hardware via software emulation.
+
+3
+00:00:21,000 --> 00:00:33,000
+The action of the CPU upon encountering an illegal instruction (sometimes referred to as an unimplemented user operation or UUO) is very similar to how it processes interrupts.
+
+4
+00:00:33,000 --> 00:00:39,000
+Think of illegal instructions as an interrupt caused directly by the CPU!
+
+5
+00:00:39,000 --> 00:00:54,000
+As for interrupts, the execution of the current instruction is suspended and the control signals are set to values to capture PC+4 in the XP register and set the PC to, in this case, 0x80000004.
+
+6
+00:00:54,000 --> 00:01:05,000
+Note that bit 31 of the new PC, aka the supervisor bit, is set to 1, meaning that the OS handler will have access to the kernel-mode context.
+
+7
+00:01:05,000 --> 00:01:12,000
+Here's some code similar to that found in the Tiny Operating System (TinyOS), which you'll be experimenting with in the final lab assignment.
+
+8
+00:01:12,000 --> 00:01:17,000
+Let's do a quick walk-through of the code executed when an illegal instruction is executed.
+
+9
+00:01:17,000 --> 00:01:22,000
+Starting at location 0, we see the branches to the handlers for the various interrupts and exceptions.
+
+10
+00:01:22,000 --> 00:01:29,000
+In the case of an illegal instruction, the BR(I_IllOp) in location 4 will be executed.
+
+11
+00:01:29,000 --> 00:01:34,000
+Immediately following is where the OS data structures are allocated.
+
+12
+00:01:34,000 --> 00:01:43,000
+This includes space for the OS stack, UserMState where user-mode register values are stored during interrupts, and the process table,
+
+13
+00:01:43,000 --> 00:01:50,000
+providing long-term storage for the complete state of each process while another process is executing.
+
+14
+00:01:50,000 --> 00:01:57,000
+When writing in assembly language, it's convenient to define macros for operations that are used repeatedly.
+
+15
+00:01:57,000 --> 00:02:09,000
+We can use a macro call whenever we want to perform the action and the assembler will insert the body of the macro in place of the macro call, performing a lexical substitution of the macro's arguments.
+
+16
+00:02:09,000 --> 00:02:16,000
+Here's a macro for a two-instruction sequence that extracts a particular field of bits from a 32-bit value.
+
+17
+00:02:16,000 --> 00:02:21,000
+M is the bit number of the left-most bit, N is the bit number of the right-most bit.
+
+18
+00:02:21,000 --> 00:02:31,000
+Bits are numbered 0 through 31, where bit 31 is the most-significant bit, i.e., the one at the left end of the 32-bit binary value.
+
+19
+00:02:31,000 --> 00:02:42,000
+And here are some macros that expand into instruction sequences that save and restore the CPU registers to or from the UserMState temporary storage area.
+
+20
+00:02:42,000 --> 00:02:47,000
+With those macros in hand, let's see how illegal opcodes are handled.
+
+21
+00:02:47,000 --> 00:02:56,000
+Like all interrupt handlers, the first action is to save the user-mode registers in the temporary storage area and initialize the OS stack.
+
+22
+00:02:56,000 --> 00:03:01,000
+Next, we fetch the illegal instruction from the user-mode program.
+
+23
+00:03:01,000 --> 00:03:08,000
+Note that the saved PC+4 value is a virtual address in the context of the interrupted program.
+
+24
+00:03:08,000 --> 00:03:15,000
+So we'll need to use the MMU routines to compute the correct physical address -- more about this on the next slide.
+
+25
+00:03:15,000 --> 00:03:26,000
+Then we'll use the opcode of the illegal instruction as an index into a table of subroutine addresses, one for each of the 64 possible opcodes.
+
+26
+00:03:26,000 --> 00:03:34,000
+Once we have the address of the handler for this particular illegal opcode, we JMP there to deal with the situation.
+
+27
+00:03:34,000 --> 00:03:42,000
+Selecting a destination from a table of addresses is called "dispatching" and the table is called the "dispatch table".
+
+28
+00:03:42,000 --> 00:05:42,000
+If the dispatch table contains many different entries, dispatching is much more efficient in time and space than a long series of compares and branches.
+
+29
+00:05:42,000 --> 00:03:59,000
+In this case, the table is indicating that the handler for most illegal opcodes is the UUOError routine,
+
+30
+00:03:59,000 --> 00:04:07,000
+so it might have smaller and faster simply to test for the two illegal opcodes the OS is going to emulate.
+
+31
+00:04:07,000 --> 00:04:17,000
+Illegal opcode 1 will be used to implement procedure calls from user-mode to the OS, which we call supervisor calls.
+
+32
+00:04:17,000 --> 00:04:19,000
+More on this in the next segment.
+
+33
+00:04:19,000 --> 00:04:30,000
+As an example of having the OS emulate an instruction, we'll use illegal opcode 2 as the opcode for the SWAPREG instruction, which we'll discuss now.
+
+34
+00:04:30,000 --> 00:04:37,000
+But first just a quick look at how the OS converts user-mode virtual addresses into physical addresses it can use.
+
+35
+00:04:37,000 --> 00:04:43,000
+We'll build on the MMU VtoP procedure, described in the previous lecture.
+
+36
+00:04:43,000 --> 00:04:50,000
+This procedure expects as its arguments the virtual page number and offset fields of the virtual address, so,
+
+37
+00:04:50,000 --> 00:04:57,000
+following our convention for passing arguments to C procedures, these are pushed onto the stack in reverse order.
+
+38
+00:04:57,000 --> 00:05:01,000
+The corresponding physical address is returned in R0.
+
+39
+00:05:01,000 --> 00:05:08,000
+We can then use the calculated physical address to read the desired location from physical memory.
+
+40
+00:05:08,000 --> 00:05:12,000
+Okay, back to dealing with illegal opcodes.
+
+41
+00:05:12,000 --> 00:05:15,000
+Here's the handler for opcodes that are truly illegal.
+
+42
+00:05:15,000 --> 00:05:23,000
+In this case the OS uses various kernel routines to print out a helpful error message on the user's console, then crashes the system!
+
+43
+00:05:23,000 --> 00:05:30,000
+You may have seen these "blue screens of death" if you run the Windows operating system, full of cryptic hex numbers.
+
+44
+00:05:30,000 --> 00:05:36,000
+Actually, this wouldn't be the best approach to handling an illegal opcode in a user's program.
+
+45
+00:05:36,000 --> 00:05:44,000
+In a real operating system, it would be better to save the state of the process in a special debugging file historically referred to as a "core dump"
+
+46
+00:05:44,000 --> 00:05:52,000
+and then terminate this particular process, perhaps printing a short error message on the user's console to let them know what happened.
+
+47
+00:05:52,000 --> 00:05:59,000
+Then later the user could start a debugging program to examine the dump file to see where their bug is.
+
+48
+00:05:59,000 --> 00:06:11,000
+Finally, here's the handler that will emulate the actions of the SWAPREG instruction, after which program execution will resume as if the instruction had been implemented in hardware.
+
+49
+00:06:11,000 --> 00:06:16,000
+SWAPREG is an instruction that swaps the values in the two specified registers.
+
+50
+00:06:16,000 --> 00:06:26,000
+To define a new instruction, we'd first have to let the assembler know to convert the swapreg(ra,rc) assembly language statement into binary.
+
+51
+00:06:26,000 --> 00:06:34,000
+In this case we'll use a binary format similar to the ADDC instruction, but setting the unused literal field to 0.
+
+52
+00:06:34,000 --> 00:06:42,000
+The encoding for the RA and RC registers occur in their usual fields and the opcode field is set to 2.
+
+53
+00:06:42,000 --> 00:06:45,000
+Emulation is surprisingly simple.
+
+54
+00:06:45,000 --> 00:06:58,000
+First we extract the RA and RC fields from the binary for the swapreg instruction and convert those values into the appropriate byte offsets for accessing the temporary array of saved register values.
+
+55
+00:06:58,000 --> 00:07:06,000
+Then we use RA and RC offsets to access the user-mode register values that have been saved in UserMState.
+
+56
+00:07:06,000 --> 00:07:18,000
+We'll make the appropriate interchange, leaving the updated register values in UserMState, where they'll be loaded into the CPU registers upon returning from the illegal instruction interrupt handler.
+
+57
+00:07:18,000 --> 00:07:25,000
+Finally, we'll branch to the kernel code that restores the process state and resumes execution.
+
+58
+00:07:25,000 --> 00:07:28,000
+We'll see this code in the next segment.
+

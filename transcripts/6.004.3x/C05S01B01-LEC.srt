@@ -1,0 +1,200 @@
+0
+00:00:00,000 --> 00:00:05,000
+In this lecture we return to the memory system that we last discussed in Lecture 14 of Part 2.
+
+1
+00:00:05,000 --> 00:00:15,000
+There we learned about the fundamental tradeoff in current memory technologies: as the memory's capacity increases, so does it access time.
+
+2
+00:00:15,000 --> 00:00:22,000
+It takes some architectural cleverness to build a memory system that has a large capacity and a small average access time.
+
+3
+00:00:22,000 --> 00:00:29,000
+The cleverness is embodied in the cache, a hardware subsystem that lives between the CPU and main memory.
+
+4
+00:00:29,000 --> 00:00:43,000
+Modern CPUs have several levels of cache, where the modest-capacity first level has an access time close to that of the CPU, and higher levels of cache have slower access times but larger capacities.
+
+5
+00:00:43,000 --> 00:00:57,000
+Caches give fast access to a small number of memory locations, using associative addressing so that the cache has the ability to hold the contents of the memory locations the CPU is accessing most frequently.
+
+6
+00:00:57,000 --> 00:01:01,000
+The current contents of the cache are managed automatically by the hardware.
+
+7
+00:01:01,000 --> 00:01:13,000
+Caches work well because of the principle of locality: if the CPU accesses location X at time T, it's likely to access nearby locations in the not-too-distant future.
+
+8
+00:01:13,000 --> 00:01:26,000
+The cache is organized so that nearby locations can all reside in the cache simultaneously, using a simple indexing scheme to choose which cache location should be checked for a matching address.
+
+9
+00:01:26,000 --> 00:01:32,000
+If the address requested by the CPU resides in the cache, access time is quite fast.
+
+10
+00:01:32,000 --> 00:01:46,000
+In order to increase the probability that requested addresses reside in the cache, we introduced the notion of "associativity", which increased the number of cache locations checked on each access and
+
+11
+00:01:46,000 --> 00:01:51,000
+solved the problem of having, say, instructions and data compete for the same cache locations..
+
+12
+00:01:51,000 --> 00:01:58,000
+We also discussed appropriate choices for block size (the number of words in a cache line),
+
+13
+00:01:58,000 --> 00:02:04,000
+replacement policy (how to choose which cache line to reuse on a cache miss),
+
+14
+00:02:04,000 --> 00:02:09,000
+and write policy (deciding when to write changed data back to main memory).
+
+15
+00:02:09,000 --> 00:02:17,000
+We'll see these same choices again in this lecture as we work to expand the memory hierarchy beyond main memory.
+
+16
+00:02:17,000 --> 00:02:25,000
+We never discussed where the data in main memory comes from and how the process of filling main memory is managed.
+
+17
+00:02:25,000 --> 00:02:27,000
+That's the topic of today's lecture..
+
+18
+00:02:27,000 --> 00:02:41,000
+Flash drives and hard disks provide storage options that have more capacity than main memory, with the added benefit of being non-volatile, i.e., they continue to store data even when turned off.
+
+19
+00:02:41,000 --> 00:02:52,000
+The generic name for these new devices is "secondary storage", where data will reside until it's moved to "primary storage", i.e., main memory, for use.
+
+20
+00:02:52,000 --> 00:03:01,000
+So when we first turn on a computer system, all of its data will be found in secondary storage, which we'll think of as the final level of our memory hierarchy.
+
+21
+00:03:01,000 --> 00:03:16,000
+As we think about the right memory architecture, we'll build on the ideas from our previous discussion of caches, and, indeed, think of main memory as another level of cache for the permanent, high-capacity secondary storage.
+
+22
+00:03:16,000 --> 00:03:26,000
+We'll be building what we call a virtual memory system, which, like caches, will automatically move data from secondary storage into main memory as needed.
+
+23
+00:03:26,000 --> 00:03:39,000
+The virtual memory system will also let us control what data can be accessed by the program, serving as a stepping stone to building a system that can securely run many programs on a single CPU.
+
+24
+00:03:39,000 --> 00:03:41,000
+Let's get started!
+
+25
+00:03:41,000 --> 00:03:48,000
+Here we see the cache and main memory, the two components of our memory system as developed in Lecture 14.
+
+26
+00:03:48,000 --> 00:03:51,000
+And here's our new secondary storage layer.
+
+27
+00:03:51,000 --> 00:03:56,000
+The good news: the capacity of secondary storage is huge!
+
+28
+00:03:56,000 --> 00:04:06,000
+Even the most modest modern computer system will have 100's of gigabytes of secondary storage and having a terabyte or two is not uncommon on medium-size desktop computers.
+
+29
+00:04:06,000 --> 00:04:15,000
+Secondary storage for the cloud can grow to many petabytes (a petabyte is 10^15 bytes or a million gigabytes).
+
+30
+00:04:15,000 --> 00:04:22,000
+The bad news: disk access times are 100,000 times longer that those of DRAM.
+
+31
+00:04:22,000 --> 00:04:30,000
+So the change in access time from DRAM to disk is much, much larger than the change from caches to DRAM.
+
+32
+00:04:30,000 --> 00:04:40,000
+When looking at DRAM timing, we discovered that the additional access time for retrieving a contiguous block of words was small compared to the access time for the first word,
+
+33
+00:04:40,000 --> 00:04:46,000
+so fetching a block was the right plan assuming we'd eventually access the additional words.
+
+34
+00:04:46,000 --> 00:04:53,000
+For disks, the access time difference between the first word and successive words is even more dramatic.
+
+35
+00:04:53,000 --> 00:04:58,000
+So, not surprisingly, we'll be reading fairly large blocks of data from disk.
+
+36
+00:04:58,000 --> 00:05:10,000
+The consequence of the much, much larger secondary-storage access time is that it will be very time consuming to access disk if the data we need is not in main memory.
+
+37
+00:05:10,000 --> 00:05:16,000
+So we need to design our virtual memory system to minimize misses when accessing main memory.
+
+38
+00:05:16,000 --> 00:05:30,000
+A miss, and the subsequent disk access, will have a huge impact on the average memory access time, so the miss rate will need to be very, very small compared to, say, the rate of executing instructions.
+
+39
+00:05:30,000 --> 00:05:38,000
+Given the enormous miss penalties of secondary storage, what does that tell us about how it should be used as part of our memory hierarchy?
+
+40
+00:05:38,000 --> 00:05:47,000
+We will need high associativity, i.e., we need a great deal of flexibility on how data from disk can be located in main memory.
+
+41
+00:05:47,000 --> 00:06:00,000
+In other words, if our working set of memory accesses fit in main memory, our virtual memory system should make that possible, avoiding unnecessary collisions between accesses to one block of data and another.
+
+42
+00:06:00,000 --> 00:06:08,000
+We'll want to use a large block size to take advantage of the low incremental cost of reading successive words from disk.
+
+43
+00:06:08,000 --> 00:06:18,000
+And, given the principle of locality, we'd expect to be accessing other words of the block, thus amortizing the cost of the miss over many future hits.
+
+44
+00:06:18,000 --> 00:06:32,000
+Finally, we'll want to use a write-back strategy where we'll only update the contents of disk when data that's changed in main memory needs to be replaced by data from other blocks of secondary storage.
+
+45
+00:06:32,000 --> 00:06:36,000
+There is upside to misses having such long latencies.
+
+46
+00:06:36,000 --> 00:06:43,000
+We can manage the organization of main memory and the accesses to secondary storage in software.
+
+47
+00:06:43,000 --> 00:06:52,000
+Even it takes 1000's of instructions to deal with the consequences of a miss, executing those instructions is quick compared to the access time of a disk.
+
+48
+00:06:52,000 --> 00:06:57,000
+So our strategy will be to handle hits in hardware and misses in software.
+
+49
+00:06:57,000 --> 00:07:08,000
+This will lead to simple memory management hardware and the possibility of using very clever strategies implemented in software to figure out what to do on misses.
+

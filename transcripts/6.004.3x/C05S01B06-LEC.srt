@@ -1,0 +1,356 @@
+0
+00:00:00,000 --> 00:00:07,000
+There are three architectural parameters that characterize a virtual memory system and hence the architecture of the MMU.
+
+1
+00:00:07,000 --> 00:00:14,000
+P is the number of address bits used for the page offset in both virtual and physical addresses.
+
+2
+00:00:14,000 --> 00:00:19,000
+V is the number of address bits used for the virtual page number.
+
+3
+00:00:19,000 --> 00:00:24,000
+And M is the number of address bits used for the physical page number.
+
+4
+00:00:24,000 --> 00:00:29,000
+All the other parameters, listed on the right, are derived from these three parameters.
+
+5
+00:00:29,000 --> 00:00:41,000
+As mentioned earlier, the typical page size is between 4KB and 16KB, the sweet spot in the tradeoff between the downside of using physical memory to hold unwanted locations
+
+6
+00:00:41,000 --> 00:00:52,000
+and the upside of reading as much as possible from secondary storage so as to amortize the high cost of accessing the initial word over as many words as possible.
+
+7
+00:00:52,000 --> 00:00:57,000
+The size of the virtual address is determined by the ISA.
+
+8
+00:00:57,000 --> 00:01:10,000
+We're now making the transition from 32-bit architectures, which support a 4 gigabyte virtual address space, to 64-bit architectures, which support a 16 exabyte virtual address space.
+
+9
+00:01:10,000 --> 00:01:18,000
+"Exa" is the SI prefix for 10^18 -- a 64-bit address can access a *lot* of memory!
+
+10
+00:01:18,000 --> 00:01:26,000
+The limitations of a small virtual address have been the main cause for the extinction of many ISAs.
+
+11
+00:01:26,000 --> 00:01:32,000
+Of course, each generation of engineers thinks that the transition they make will be the final one!
+
+12
+00:01:32,000 --> 00:01:38,000
+I can remember when we all thought that 32 bits was an unimaginably large address.
+
+13
+00:01:38,000 --> 00:01:47,000
+Back then we're buying memory by the megabyte and only in our fantasies did we think one could have a system with several thousand megabytes.
+
+14
+00:01:47,000 --> 00:01:55,000
+Today's CPU architects are feeling pretty smug about 64 bits -- we'll see how they feel in a couple of decades!
+
+15
+00:01:55,000 --> 00:02:07,000
+The size of physical addresses is currently between 30 bits (for embedded processors with modest memory needs) and 40+ bits (for servers that handle large data sets).
+
+16
+00:02:07,000 --> 00:02:17,000
+Since CPU implementations are expected to change every couple of years, the choice of physical memory size can be adjusted to match current technologies.
+
+17
+00:02:17,000 --> 00:02:23,000
+Since programmers use virtual addresses, they're insulated from this implementation choice.
+
+18
+00:02:23,000 --> 00:02:29,000
+The MMU ensures that existing software will continue to function correctly with different sizes of physical memory.
+
+19
+00:02:29,000 --> 00:02:35,000
+The programmer may notice differences in performance, but not in basic functionality.
+
+20
+00:02:35,000 --> 00:02:44,000
+For example, suppose our system supported a 32-bit virtual address, a 30-bit physical address and a 4KB page size.
+
+21
+00:02:44,000 --> 00:02:54,000
+So p = 12, v = 32-12 = 20, and m = 30 - 12 = 18.
+
+22
+00:02:54,000 --> 00:03:00,000
+There are 2^m physical pages, which is 2^18 in our example.
+
+23
+00:03:00,000 --> 00:03:05,000
+There are 2^v virtual pages, which is 2^20 in our example.
+
+24
+00:03:05,000 --> 00:03:14,000
+And since there is one entry in the page map for each virtual page, there are 2^20 (approximately one million) page map entries.
+
+25
+00:03:14,000 --> 00:03:26,000
+Each page map entry contains a PPN, an R bit and a D bit, for a total of m+2 bits, which is 20 bits in our example.
+
+26
+00:03:26,000 --> 00:03:30,000
+So there are approximately 20 million bits in the page map.
+
+27
+00:03:30,000 --> 00:03:38,000
+If we were thinking of using a large special-purpose static RAM to hold the page map, this would get pretty expensive!
+
+28
+00:03:38,000 --> 00:03:42,000
+But why use a special-purpose memory for the page map?
+
+29
+00:03:42,000 --> 00:03:47,000
+Why not use a portion of main memory, which we have a lot of and have already bought and paid for?
+
+30
+00:03:47,000 --> 00:03:54,000
+We could use a register, called the page map pointer, to hold the address of the page map array in main memory.
+
+31
+00:03:54,000 --> 00:03:59,000
+In other words, the page map would occupy some number of dedicated physical pages.
+
+32
+00:03:59,000 --> 00:04:10,000
+Using the desired virtual page number as an index, the hardware could perform the usual array access calculation to fetch the needed page map entry from main memory.
+
+33
+00:04:10,000 --> 00:04:19,000
+The downside of this proposed implementation is that it now takes two accesses to physical memory to perform one virtual access:
+
+34
+00:04:19,000 --> 00:04:28,000
+the first to retrieve the page table entry needed for the virtual-to-physical address translation, and the second to actually access the requested location.
+
+35
+00:04:28,000 --> 00:04:31,000
+Once again, caches to the rescue.
+
+36
+00:04:31,000 --> 00:04:41,000
+Most systems incorporate a special-purpose cache, called a translation look-aside buffer (TLB), that maps virtual page numbers to physical page numbers.
+
+37
+00:04:41,000 --> 00:04:45,000
+The TLB is usually small and quite fast.
+
+38
+00:04:45,000 --> 00:04:51,000
+It's usually fully-associative to ensure the best possible hit ratio by avoiding collisions.
+
+39
+00:04:51,000 --> 00:05:03,000
+If the PPN is found by using the TLB, the access to main memory for the page table entry can be avoided, and we're back to a single physical access for each virtual access.
+
+40
+00:05:03,000 --> 00:05:09,000
+The hit ratio of a TLB is quite high, usually better than 99%.
+
+41
+00:05:09,000 --> 00:05:19,000
+This isn't too surprising since locality and the notion of a working set suggest that only a small number of pages are in active use over short periods of time.
+
+42
+00:05:19,000 --> 00:05:28,000
+As we'll see in a few slides, there are interesting variations to this simple TLB page-map-in-main-memory architecture.
+
+43
+00:05:28,000 --> 00:05:31,000
+But the basic strategy will remain the same.
+
+44
+00:05:31,000 --> 00:05:33,000
+Putting it all together:
+
+45
+00:05:33,000 --> 00:05:43,000
+the virtual address generated by the CPU is first processed by the TLB to see if the appropriate translation from VPN to PPN has been cached.
+
+46
+00:05:43,000 --> 00:05:47,000
+If so, the main memory access can proceed directly.
+
+47
+00:05:47,000 --> 00:05:55,000
+If the desired mapping is not in the TLB, the appropriate entry in the page map is accessed in main memory.
+
+48
+00:05:55,000 --> 00:06:02,000
+If the page is resident, the PPN field of the page map entry is used to complete the address translation.
+
+49
+00:06:02,000 --> 00:06:11,000
+And, of course, the translation is cached in the TLB so that subsequent accesses to this page can avoid the access to the page map.
+
+50
+00:06:11,000 --> 00:06:20,000
+If the desired page is not resident, the MMU triggers a page fault exception and the page fault handler code will deal with the problem.
+
+51
+00:06:20,000 --> 00:06:24,000
+Here's a final example showing all the pieces in action.
+
+52
+00:06:24,000 --> 00:06:30,000
+In this example, p = 10, v = 22, and m = 14.
+
+53
+00:06:30,000 --> 00:06:35,000
+How many pages can reside in physical memory at one time?
+
+54
+00:06:35,000 --> 00:06:40,000
+There are 2^m physical pages, so 2^14.
+
+55
+00:06:40,000 --> 00:06:44,000
+How many entries are there in the page table?
+
+56
+00:06:44,000 --> 00:06:52,000
+There's one entry for each virtual page and there are 2^v virtual pages, so there are 2^22 entries in the page table.
+
+57
+00:06:52,000 --> 00:06:56,000
+How many bits per entry in the page table?
+
+58
+00:06:56,000 --> 00:07:00,000
+Assume each entry holds the PPN, the resident bit, and the dirty bit.
+
+59
+00:07:00,000 --> 00:07:07,000
+Since the PPN is m bits, there are m+2 bits in each entry, so 16 bits.
+
+60
+00:07:07,000 --> 00:07:10,000
+How many pages does the page table occupy?
+
+61
+00:07:10,000 --> 00:07:23,000
+There are 2^v page table entries, each occupying (m+2)/8 bytes, so the total size of the page table in this example is 2^23 bytes.
+
+62
+00:07:23,000 --> 00:07:35,000
+Each page holds 2^p = 2^10 bytes, so the page table occupies 2^23/2^10 = 2^13 pages.
+
+63
+00:07:35,000 --> 00:07:40,000
+What fraction of virtual memory can be resident at any given time?
+
+64
+00:07:40,000 --> 00:07:45,000
+There are 2^v virtual pages, of which 2^m can be resident.
+
+65
+00:07:45,000 --> 00:07:56,000
+So the fraction of resident pages is 2^m/2^v = 2^14/2^22 = 1/2^8.
+
+66
+00:07:56,000 --> 00:08:03,000
+What is the physical address for virtual address 0x1804?
+
+67
+00:08:03,000 --> 00:08:07,000
+Which MMU components are involved in the translation?
+
+68
+00:08:07,000 --> 00:08:12,000
+First we have to decompose the virtual address into VPN and offset.
+
+69
+00:08:12,000 --> 00:08:17,000
+The offset is the low-order 10 bits, so is 0x004 in this example.
+
+70
+00:08:17,000 --> 00:08:22,000
+The VPN is the remaining address bits, so the VPN is 0x6.
+
+71
+00:08:22,000 --> 00:08:28,000
+Looking first in the TLB, we that the VPN-to-PPN mapping for VPN 0x6 is cached,
+
+72
+00:08:28,000 --> 00:08:40,000
+so we can construct the physical address by concatenating the PPN (0x2) with the 10-bit offset (0x4) to get a physical address of 0x804.
+
+73
+00:08:40,000 --> 00:08:41,000
+You're right!
+
+74
+00:08:41,000 --> 00:08:46,000
+It's a bit of pain to do all the bit manipulations when p is not a multiple of 4.
+
+75
+00:08:46,000 --> 00:08:50,000
+How about virtual address 0x1080?
+
+76
+00:08:50,000 --> 00:08:55,000
+For this address the VPN is 0x4 and the offset is 0x80.
+
+77
+00:08:55,000 --> 00:09:05,000
+The translation for VPN 0x4 is not cached in the TLB, so we have to check the page map, which tells us that the page is resident in physical page 5.
+
+78
+00:09:05,000 --> 00:09:11,000
+Concatenating the PPN and offset, we get 0x1480 as the physical address.
+
+79
+00:09:11,000 --> 00:09:16,000
+Finally, how about virtual address 0x0FC?
+
+80
+00:09:16,000 --> 00:09:20,000
+Here the VPN is 0 and the offset 0xFC.
+
+81
+00:09:20,000 --> 00:09:32,000
+The mapping for VPN 0 is not found in the TLB and checking the page map reveals that VPN 0 is not resident in main memory, so a page fault exception is triggered.
+
+82
+00:09:32,000 --> 00:09:40,000
+There are a few things to note about the example TLB and page map contents.
+
+83
+00:09:40,000 --> 00:09:44,000
+Note that a TLB entry can be invalid (it's R bit is 0).
+
+84
+00:09:44,000 --> 00:09:53,000
+This can happen when a virtual page is replaced, so when we change the R bit to 0 in the page map, we have to do the same in the TLB.
+
+85
+00:09:53,000 --> 00:09:58,000
+And should we be concerned that PPN 0x5 appears twice in the page table?
+
+86
+00:09:58,000 --> 00:10:04,000
+Note that the entry for VPN 0x3 doesn't matter since it's R bit is 0.
+
+87
+00:10:04,000 --> 00:10:12,000
+Typically when marking a page not resident, we don't bother to clear out the other fields in the entry since they won't be used when R=0.
+
+88
+00:10:12,000 --> 00:10:16,000
+So there's only one *valid* mapping to PPN 5.
+

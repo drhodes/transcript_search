@@ -1,0 +1,296 @@
+0
+00:00:00,000 --> 00:00:05,000
+Let's create a new abstraction called a "process" to capture the notion of a running program.
+
+1
+00:00:05,000 --> 00:00:15,000
+A process encompasses all the resources that would be used when running a program including those of the CPU, the MMU, input and output devices, etc.
+
+2
+00:00:15,000 --> 00:00:20,000
+Each process has a "state" that captures everything we know about its execution.
+
+3
+00:00:20,000 --> 00:00:22,000
+The process state includes
+
+4
+00:00:22,000 --> 00:00:28,000
+* the hardware state of the CPU, i.e., the values in the registers and program counter.
+
+5
+00:00:28,000 --> 00:00:37,000
+* the contents of the process' virtual address space, including code, data values, the stack, and data objects dynamically allocated from the heap.
+
+6
+00:00:37,000 --> 00:00:45,000
+Under the management of the MMU, this portion of the state can be resident in main memory or can reside in secondary storage.
+
+7
+00:00:45,000 --> 00:00:53,000
+* the hardware state of the MMU, which, as we saw earlier, depends on the context-number and page-directory registers.
+
+8
+00:00:53,000 --> 00:00:57,000
+Also included are the pages allocated for the hierarchical page map.
+
+9
+00:00:57,000 --> 00:01:06,000
+* additional information about the process' input and output activities, such as where it has reached in reading or writing files in the file system,
+
+10
+00:01:06,000 --> 00:01:10,000
+the status and buffers associated with open network connections,
+
+11
+00:01:10,000 --> 00:01:16,000
+pending events from the user interface (e.g., keyboard characters and mouse clicks), and so on.
+
+12
+00:01:16,000 --> 00:01:25,000
+As we'll see, there is a special, privileged process, called the operating system (OS), running in its own kernel-mode context.
+
+13
+00:01:25,000 --> 00:01:32,000
+The OS manages all the bookkeeping for each process, arranging for the process run periodically.
+
+14
+00:01:32,000 --> 00:01:44,000
+The OS will provide various services to the processes, such as accessing data in files, establishing network connections, managing the window system and user interface, and so on.
+
+15
+00:01:44,000 --> 00:01:53,000
+To switch from running one user-mode process to another, the OS will need to capture and save the *entire* state of the current user-mode process.
+
+16
+00:01:53,000 --> 00:01:57,000
+Some of it already lives in main memory, so we're all set there.
+
+17
+00:01:57,000 --> 00:02:01,000
+Some of it will be found in various kernel data structures.
+
+18
+00:02:01,000 --> 00:02:08,000
+And some of it we'll need to be able to save and restore from the various hardware resources in the CPU and MMU.
+
+19
+00:02:08,000 --> 00:02:23,000
+In order to successfully implement processes, the OS must be able to make it seem as if each process was running on its own "virtual machine" that works independently of other virtual machines for other processes.
+
+20
+00:02:23,000 --> 00:02:30,000
+Our goal is to efficiently share one physical machine between all the virtual machines.
+
+21
+00:02:30,000 --> 00:02:33,000
+Here's a sketch of the organization we're proposing.
+
+22
+00:02:33,000 --> 00:02:38,000
+The resources provided by a physical machine are shown at the bottom of the slide.
+
+23
+00:02:38,000 --> 00:02:43,000
+The CPU and main memory form the computation engine at heart of the system.
+
+24
+00:02:43,000 --> 00:02:53,000
+Connected to the CPU are various peripherals, a collective noun coined from the English word "periphery" that indicates the resources surrounding the CPU.
+
+25
+00:02:53,000 --> 00:02:59,000
+A timer generates periodic CPU interrupts that can be used to trigger periodic actions.
+
+26
+00:02:59,000 --> 00:03:05,000
+Secondary storage provides high-capacity non-volatile memories for the system.
+
+27
+00:03:05,000 --> 00:03:08,000
+Connections to the outside world are important too.
+
+28
+00:03:08,000 --> 00:03:12,000
+Many computers include USB connections for removable devices.
+
+29
+00:03:12,000 --> 00:03:16,000
+And most provide wired or wireless network connections.
+
+30
+00:03:16,000 --> 00:03:23,000
+And finally there are usually video monitors, keyboards and mice that serve as the user interface.
+
+31
+00:03:23,000 --> 00:03:28,000
+Cameras and microphones are becoming increasing important as the next generation of user interface.
+
+32
+00:03:28,000 --> 00:03:35,000
+The physical machine is managed by the OS running in the privileged kernel context.
+
+33
+00:03:35,000 --> 00:03:43,000
+The OS handles the low-level interfaces to the peripherals, initializes and manages the MMU contexts, and so on.
+
+34
+00:03:43,000 --> 00:03:48,000
+It's the OS that creates the virtual machine seen by each process.
+
+35
+00:03:48,000 --> 00:03:54,000
+User-mode programs run directly on the physical processor, but their execution can be interrupted by the timer,
+
+36
+00:03:54,000 --> 00:04:01,000
+giving the OS the opportunity to save away the current process state and move to running the next process.
+
+37
+00:04:01,000 --> 00:04:11,000
+Via the MMU, the OS provides each process with an independent virtual address space that's isolated from the actions of other processes.
+
+38
+00:04:11,000 --> 00:04:19,000
+The virtual peripherals provided by the OS isolate the process from all the details of sharing resources with other processes.
+
+39
+00:04:19,000 --> 00:04:28,000
+The notion of a window allows the process to access a rectangular array of pixels without having to worry if some pixels in the window are hidden by other windows.
+
+40
+00:04:28,000 --> 00:04:35,000
+Or worrying about how to ensure the mouse cursor always appears on top of whatever is being displayed, and so on.
+
+41
+00:04:35,000 --> 00:04:46,000
+Instead of accessing I/O devices directly, each process has access to a stream of I/O events that are generated when a character is typed, the mouse is clicked, etc.
+
+42
+00:04:46,000 --> 00:04:53,000
+For example, the OS deals with how to determine which typed characters belong to which process.
+
+43
+00:04:53,000 --> 00:05:03,000
+In most window systems, the user clicks on a window to indicate that the process that owns the window now has the keyboard focus and should receive any subsequent typed characters.
+
+44
+00:05:03,000 --> 00:05:08,000
+And the position of the mouse when clicked might determine which process receives the click.
+
+45
+00:05:08,000 --> 00:05:17,000
+All of which is to say that the details of sharing have been abstracted out of the simple interface provided by the virtual peripherals.
+
+46
+00:05:17,000 --> 00:05:21,000
+The same is true of accessing files on disk.
+
+47
+00:05:21,000 --> 00:05:30,000
+The OS provides the useful abstraction of having each file appear as a contiguous, growable array of bytes that supports read and write operations.
+
+48
+00:05:30,000 --> 00:05:42,000
+The OS knows how the file is mapped to a pool of sectors on the disk and deals with bad sectors, reducing fragmentation, and improving throughput by doing read look-aheads and write behinds.
+
+49
+00:05:42,000 --> 00:05:50,000
+For networks, the OS provides access to an in-order stream of bytes to some remote socket.
+
+50
+00:05:50,000 --> 00:05:59,000
+It implements the appropriate network protocols for packetizing the stream, addressing the packets, and dealing with dropped, damaged, or out-of-order packets.
+
+51
+00:05:59,000 --> 00:06:12,000
+To configure and control these virtual services, the process communicates with the OS using supervisor calls (SVCs), a type of controlled-access procedure call that invokes code in the OS kernel.
+
+52
+00:06:12,000 --> 00:06:18,000
+The details of the design and implementation of each virtual service are beyond the scope of this course.
+
+53
+00:06:18,000 --> 00:06:24,000
+If you're interested, a course on operating systems will explore each of these topics in detail.
+
+54
+00:06:24,000 --> 00:06:34,000
+The OS provides an independent virtual machine for each process, periodically switching from running one process to running the next process.
+
+55
+00:06:34,000 --> 00:06:39,000
+Let's follow along as we switch from running process #0 to running process #1.
+
+56
+00:06:39,000 --> 00:06:44,000
+Initially, the CPU is executing user-mode code in process #0.
+
+57
+00:06:44,000 --> 00:06:52,000
+That execution is interrupted, either by an explicit yield by the program, or, more likely, by a timer interrupt.
+
+58
+00:06:52,000 --> 00:07:01,000
+Either ends up transferring control to OS code running in kernel mode, while saving the current PC+4 value in the XP register.
+
+59
+00:07:01,000 --> 00:07:05,000
+We'll talk about the interrupt mechanism in more detail in just a moment.
+
+60
+00:07:05,000 --> 00:07:10,000
+The OS saves the state of process #0 in the appropriate table in kernel storage.
+
+61
+00:07:10,000 --> 00:07:14,000
+Then it reloads the state from the kernel table for process #1.
+
+62
+00:07:14,000 --> 00:07:20,000
+Note that the process #1 state was saved when process #1 was interrupted at some earlier point.
+
+63
+00:07:20,000 --> 00:07:26,000
+The OS then uses a JMP() to resume user-mode execution using the newly restored process #1 state.
+
+64
+00:07:26,000 --> 00:07:32,000
+Execution resumes in process #1 just where it was when interrupted earlier.
+
+65
+00:07:32,000 --> 00:07:37,000
+And now we're running the user-mode program in process #1.
+
+66
+00:07:37,000 --> 00:07:42,000
+We've interrupted one process and resumed execution of another.
+
+67
+00:07:42,000 --> 00:07:50,000
+We'll keep doing this in a round-robin fashion, giving each process a chance to run, before starting another round of execution.
+
+68
+00:07:50,000 --> 00:07:54,000
+The black arrows give a sense for how time proceeds.
+
+69
+00:07:54,000 --> 00:08:00,000
+For each process, virtual time unfolds as a sequence of executed instructions.
+
+70
+00:08:00,000 --> 00:08:07,000
+Unless it looks at a real-time clock, a process is unaware that occasionally its execution is suspended for a while.
+
+71
+00:08:07,000 --> 00:08:12,000
+The suspension and resumption are completely transparent to a running process.
+
+72
+00:08:12,000 --> 00:08:26,000
+Of course, from the outside we can see that in real time, the execution path moves from process to process, visiting the OS during switches, producing the dove-tailed execution path we see here.
+
+73
+00:08:26,000 --> 00:08:35,000
+Time-multiplexing of the CPU is called "timesharing" and we'll examine the implementation in more detail in the following segment.
+

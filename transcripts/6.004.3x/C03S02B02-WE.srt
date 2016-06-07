@@ -1,0 +1,252 @@
+0
+00:00:00,000 --> 00:00:07,000
+For this problem, assume that you have discovered a room full of discarded 5-stage pipelined betas.
+
+1
+00:00:07,000 --> 00:00:10,000
+These betas fall into four categories.
+
+2
+00:00:10,000 --> 00:00:16,000
+The first is completely functional 5-stage Betas with full bypass and annulment logic.
+
+3
+00:00:16,000 --> 00:00:20,000
+The second are betas with a bad register file.
+
+4
+00:00:20,000 --> 00:00:24,000
+In these betas, all data read directly from the register file is zero.
+
+5
+00:00:24,000 --> 00:00:30,000
+Note that if the data is read from a bypass path, then the correct value will be read.
+
+6
+00:00:30,000 --> 00:00:34,000
+The third set are betas without bypass paths.
+
+7
+00:00:34,000 --> 00:00:39,000
+And finally, the fourth are betas without annulment of branch delay slots.
+
+8
+00:00:39,000 --> 00:00:44,000
+The problem is that the betas are not labeled, so we do not know which falls into which category.
+
+9
+00:00:44,000 --> 00:00:49,000
+You come up with the test program shown here.
+
+10
+00:00:49,000 --> 00:00:58,000
+Your plan is to single step through the program using each Beta chip, carefully noting the address that the final JMP loads into the PC.
+
+11
+00:00:58,000 --> 00:01:04,000
+Your goal is to determine which of the four classes each chip falls into via this JMP address.
+
+12
+00:01:04,000 --> 00:01:13,000
+Notice that on a fully functional beta, this code would execute the instructions sequentially skipping the MULC instruction.
+
+13
+00:01:13,000 --> 00:01:23,000
+Here we see a pipeline diagram showing execution of this program on a fully functional beta from category C1.
+
+14
+00:01:23,000 --> 00:01:37,000
+It shows that the although the MULC instruction is fetched in cycle 2, it gets annulled when the BEQ is in the RF stage and it determines that the branch to label X, or the SUBC instruction, will be taken.
+
+15
+00:01:37,000 --> 00:01:42,000
+The MULC is annulled by inserting a NOP in its place.
+
+16
+00:01:42,000 --> 00:01:48,000
+The ADDC and BEQ instructions read R31 from the register file.
+
+17
+00:01:48,000 --> 00:01:56,000
+The SUBC, however, gets the value of R2 via the bypass path from the  BEQ instruction which is in the MEM stage.
+
+18
+00:01:56,000 --> 00:02:00,000
+The ADD then reads R0 and R2.
+
+19
+00:02:00,000 --> 00:02:07,000
+R0 has already made it back to the register file because the ADDC instruction completed by the end of cycle 4.
+
+20
+00:02:07,000 --> 00:02:15,000
+R2, however, is read via the bypass path from the SUBC instruction which is in the ALU stage.
+
+21
+00:02:15,000 --> 00:02:25,000
+Finally, the JMP, reads the value of R3 via the bypass path from the ADD instruction which is in the ALU stage in cycle 6.
+
+22
+00:02:25,000 --> 00:02:33,000
+When run on a fully functional beta with bypass paths and annulment of branch delay slots, the code behaves as follows:
+
+23
+00:02:33,000 --> 00:02:37,000
+The ADDC sets R0 = 4.
+
+24
+00:02:37,000 --> 00:02:41,000
+The BEQ stores PC + 4 into R2.
+
+25
+00:02:41,000 --> 00:02:53,000
+Since the ADDC is at address 0, the BEQ is at address 4, so PC + 4 = 8 is stored into R2, and the program branches to label X.
+
+26
+00:02:53,000 --> 00:03:02,000
+Next, the SUBC subtracts 4 from the latest value of R2 and stores the result which is 4 back into R2.
+
+27
+00:03:02,000 --> 00:03:10,000
+The ADD adds R0 and R2, or 4 and 4, and stores the result which is 8 into R3.
+
+28
+00:03:10,000 --> 00:03:15,000
+The JMP jumps to the address in R3 which is 8.
+
+29
+00:03:15,000 --> 00:03:25,000
+When run on C2 which has a bad register file that always outputs a zero, the behavior of the program changes a bit.
+
+30
+00:03:25,000 --> 00:03:33,000
+The ADDC and BEQ instructions which use R31 which is 0 anyways behave in the same way as before.
+
+31
+00:03:33,000 --> 00:03:41,000
+The SUBC, which gets the value of R2 from the bypass path, reads the correct value for R2 which is 8.
+
+32
+00:03:41,000 --> 00:03:51,000
+Recall that only reads directly from the register file return a zero, whereas if the data is coming from a bypass path, then you get the correct value.
+
+33
+00:03:51,000 --> 00:03:53,000
+So the SUBC produces a 4.
+
+34
+00:03:53,000 --> 00:03:59,000
+The ADD reads R0 from the register file and R2 from the bypass path.
+
+35
+00:03:59,000 --> 00:04:07,000
+The result is that the value of R0 is read as if it was 0 while that of R2 is correct and is 4.
+
+36
+00:04:07,000 --> 00:04:18,000
+So R3 gets the value 4 assigned to it, and that is the address that the JMP instruction jumps to because it too reads its register from a bypass path.
+
+37
+00:04:18,000 --> 00:04:28,000
+When run on C3 which does not have any bypass paths, some of the instructions will read stale values of their source operands.
+
+38
+00:04:28,000 --> 00:04:31,000
+Let's go through the example in detail.
+
+39
+00:04:31,000 --> 00:04:41,000
+The ADDC and BEQ instructions read R31 which is 0 from the register file so what they ultimately produce does not change.
+
+40
+00:04:41,000 --> 00:04:53,000
+However, you must keep in mind that the updated value of the destination register will not get updated until after that instruction completes the WB stage of the pipeline.
+
+41
+00:04:53,000 --> 00:05:05,000
+When the SUBC reads R2, it gets a stale value of R2 because the BEQ instruction has not yet completed, so it assumes that R2 = 0.
+
+42
+00:05:05,000 --> 00:05:09,000
+It then subtracts 4 from that and tries to write -4 into R2.
+
+43
+00:05:09,000 --> 00:05:12,000
+Next the ADD runs.
+
+44
+00:05:12,000 --> 00:05:25,000
+Recall that the ADD would normally read R0 from the register file because by the time the ADD is in the RF stage, the ADDC which writes to R0 has completed all the pipeline stages.
+
+45
+00:05:25,000 --> 00:05:29,000
+The ADD also normally read R2 from the bypass path.
+
+46
+00:05:29,000 --> 00:05:36,000
+However, since C3 does not have bypass paths, it reads a stale value of R2 from the register file.
+
+47
+00:05:36,000 --> 00:05:53,000
+To determine which stale value it reads, we need to examine the pipeline diagram to see if either the BEQ or the SUBC operations, both of which eventually update R2, have completed by the time the ADD reads its source operands.
+
+48
+00:05:53,000 --> 00:06:09,000
+Looking at our pipeline diagram, we see that when the ADD is in the RF stage, neither the BEQ nor the SUBC have completed, thus the value read for R2 is the initial value of R2 which is 0.
+
+49
+00:06:09,000 --> 00:06:21,000
+We can now determine the behavior of the ADD instruction which is that it assumes R0 = 4 and R2 = 0 and will eventually write a 4 into R3.
+
+50
+00:06:21,000 --> 00:06:34,000
+Finally, the JMP instruction wants to read the result of the ADD, however, since there are no bypass paths, it reads the original value of R3 which was 0 and jumps to address 0.
+
+51
+00:06:34,000 --> 00:06:55,000
+Of course, had we looked at our code a little more closely, we could have determined this without all the intermediate steps because the ADD is the only instruction that tries to update R3, and you know that the JMP would normally get R3 from the bypass path which is not available, therefore it must read the original value of R3 which is 0.
+
+52
+00:06:55,000 --> 00:07:06,000
+In category C4, the betas do not annul instructions that were fetched after a branch instruction but aren't supposed to get executed.
+
+53
+00:07:06,000 --> 00:07:14,000
+This means that the MULC which is fetched after the BEQ is actually executed in the pipeline and affects the value of R2.
+
+54
+00:07:14,000 --> 00:07:18,000
+Let's take a close look at what happens in each instruction.
+
+55
+00:07:18,000 --> 00:07:25,000
+Once again we begin with the ADDC setting R0 to 4 and the BEQ setting R2 to 8.
+
+56
+00:07:25,000 --> 00:07:32,000
+Since our bypass paths are now working, we can assume that we can immediately get the updated value.
+
+57
+00:07:32,000 --> 00:07:40,000
+Next, we execute the MULC which takes the latest value of R2 from the bypass path and multiplies it by 2.
+
+58
+00:07:40,000 --> 00:07:43,000
+So it sets R2 = 16.
+
+59
+00:07:43,000 --> 00:07:51,000
+The SUBC now uses this value for R2 from which it subtracts 4 to produce R2 = 12.
+
+60
+00:07:51,000 --> 00:08:01,000
+The ADD then reads R0 = 4 and adds to it R2 = 12 to produce R3 = 16.
+
+61
+00:08:01,000 --> 00:08:05,000
+Finally, the JMP jumps to address 16.
+
+62
+00:08:05,000 --> 00:08:16,000
+Since each of the four categories produces a unique jump address, this program can be used to sort out all the betas into the four categories.
+

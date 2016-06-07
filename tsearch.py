@@ -12,34 +12,36 @@ PROG_DESCRIPTION = '''
 Generate a JSON blob given a collection of .SRT files
 '''
 
-# sequence 1, the video in tab 4 in the content widget.
-URL_TEMPLATE_UNCLOBBERED = (
-    "https://courses.edx.org/courses/"
-    "course-v1:MITx+6.004.2x+3T2015/"
-    "courseware/c3/c3s1/4"
-    "?activate_block_id=block-v1"
-    "%3AMITx"
-    "%2B6.004.2x"
-    "%2B3T2015"
-    "%2Btype"
-    "%40discussion"
-    "%2Bblock"
-    "%40c3s1v4"
-)
+
+# URL_TEMPLATE = (
+#     "https://courses.edx.org/courses/"
+#     "course-v1:MITx+6.004.3x+2T2016/"
+#     #"course-v1:MITx+6.004.2x+3T2015/"
+#     "courseware/c<CHAPTER>/c<CHAPTER>s<SEQ>/<BLOCK>"
+#     "?activate_block_id=block-v1"
+#     "%3AMITx"
+#     "%2B6.004.2x"
+#     "%2B3T2015"
+#     "%2Btype"
+#     "%40discussion"
+#     "%2Bblock"
+#     "%40c<CHAPTER>s<SEQ>v<BLOCK>"
+# )
 
 URL_TEMPLATE = (
     "https://courses.edx.org/courses/"
-    "course-v1:MITx+6.004.2x+3T2015/"
+    "course-v1:MITx+6.004.3x+2T2016/"
     "courseware/c<CHAPTER>/c<CHAPTER>s<SEQ>/<BLOCK>"
     "?activate_block_id=block-v1"
     "%3AMITx"
-    "%2B6.004.2x"
-    "%2B3T2015"
+    "%2B6.004.3x"
+    "%2B2T2016"
     "%2Btype"
     "%40discussion"
     "%2Bblock"
     "%40c<CHAPTER>s<SEQ>v<BLOCK>"
 )
+
 
 
 # https://courses.edx.org/courses/

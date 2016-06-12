@@ -176,5 +176,6 @@ app.controller('myCtrl', function($scope) {
     
     $scope.search = function() {
         return refreshResults($scope.terms, course);
-    };    
+    };
+
 });

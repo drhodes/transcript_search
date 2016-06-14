@@ -1,0 +1,188 @@
+0
+00:00:00,000 --> 00:00:10,000
+So far in constructing our timesharing system, we've worked hard to build an execution environment that gives each process the illusion of running on its own independent virtual machine.
+
+1
+00:00:10,000 --> 00:00:18,000
+The processes appear to run concurrently although we're really quickly switching between running processes on a single hardware system.
+
+2
+00:00:18,000 --> 00:00:29,000
+This often leads to better overall utilization since if a particular process is waiting for an I/O event, we can devote the unneeded cycles to running other processes.
+
+3
+00:00:29,000 --> 00:00:43,000
+The downside of timesharing is that it can be hard to predict exactly how long a process will take to complete since the CPU time it will receive depends on how much time the other processes are using.
+
+4
+00:00:43,000 --> 00:00:49,000
+So we'd need to know how many other processes there are, whether they're waiting for I/O events, etc.
+
+5
+00:00:49,000 --> 00:00:54,000
+In a timesharing system we can't make any guarantees on completion times.
+
+6
+00:00:54,000 --> 00:01:05,000
+And we chose to have the OS play the intermediary between interrupt events triggered by the outside world and the user-mode programs where the event processing occurs.
+
+7
+00:01:05,000 --> 00:01:11,000
+In other words, we've separated event handling (where the data is stored by the OS)
+
+8
+00:01:11,000 --> 00:01:16,000
+and event processing (where the data is passed to user-mode programs via SVCs).
+
+9
+00:01:16,000 --> 00:01:27,000
+This means that using a conventional timesharing system, it's hard to ensure that event processing will be complete by a specified event deadline,
+
+10
+00:01:27,000 --> 00:01:32,000
+i.e., before the end of a specified time period after the event was triggered.
+
+11
+00:01:32,000 --> 00:01:43,000
+Since modern CPU chips provide inexpensive, high-performance, general-purpose computing, they are often used as the "brains" of control systems where deadlines are a fact of life.
+
+12
+00:01:43,000 --> 00:01:49,000
+For example, consider the electronic stability control (ESC) system on modern cars.
+
+13
+00:01:49,000 --> 00:01:59,000
+This system helps drivers maintain control of their vehicle during steering and braking maneuvers by keeping the car headed in the driver's intended direction.
+
+14
+00:01:59,000 --> 00:02:06,000
+The computer at the heart of the system measures the forces on the car, the direction of steering, and the rotation of the wheels
+
+15
+00:02:06,000 --> 00:02:12,000
+to determine if there's been a loss of control due to a loss of traction, i.e., is the car "spinning out"?
+
+16
+00:02:12,000 --> 00:02:23,000
+If so, the ESC uses rapid automatic braking of individual wheels to prevent the car's heading from veering from the driver's intended heading.
+
+17
+00:02:23,000 --> 00:02:33,000
+With ESC you can slam on your brakes or swerve to avoid an obstacle and not worry that the car will suddenly fishtail out of control.
+
+18
+00:02:33,000 --> 00:02:37,000
+You can feel the system working as a chatter in the brakes.
+
+19
+00:02:37,000 --> 00:02:48,000
+To be effective, the ESC system has to guarantee the correct braking action at each wheel within a certain time of receiving dangerous sensor settings.
+
+20
+00:02:48,000 --> 00:02:57,000
+This means that it has to be able to guarantee that certain subroutines will run to completion within some predetermined time of a sensor event.
+
+21
+00:02:57,000 --> 00:03:04,000
+To be able to make these guarantees we'll have to come up with a better way to schedule process execution --
+
+22
+00:03:04,000 --> 00:03:07,000
+round-robin scheduling won't get the job done!
+
+23
+00:03:07,000 --> 00:03:12,000
+Systems that can make such guarantees are called "real-time systems".
+
+24
+00:03:12,000 --> 00:03:24,000
+One measure of performance in a real-time system is the interrupt latency L, the amount of time that elapses between a request to run some code and when that code actually starts executing.
+
+25
+00:03:24,000 --> 00:03:34,000
+If there's a deadline D associated with servicing the request, we can compute the maximum allowable latency that still permits the service routine to complete by the deadline.
+
+26
+00:03:34,000 --> 00:03:39,000
+In other words, what's the largest L such that L_max+S = D?
+
+27
+00:03:39,000 --> 00:03:42,000
+Bad things can happen if we miss certain deadlines.
+
+28
+00:03:42,000 --> 00:03:45,000
+Maybe that's why we call them "dead"-lines :)
+
+29
+00:03:45,000 --> 00:03:54,000
+In those cases we want our real time system to guarantee that the actual latency is always less than the maximum allowable latency.
+
+30
+00:03:54,000 --> 00:03:59,000
+These critical deadlines give rise to what we call "hard real-time constraints".
+
+31
+00:03:59,000 --> 00:04:02,000
+What factors contribute to interrupt latency?
+
+32
+00:04:02,000 --> 00:04:12,000
+Well, while handling an interrupt it takes times to save the process state, switch to the kernel context, and dispatch to the correct interrupt handler.
+
+33
+00:04:12,000 --> 00:04:18,000
+When writing our OS, we can work to minimize the amount of code involved in the setup phase of an interrupt handler.
+
+34
+00:04:18,000 --> 00:04:24,000
+We also have to avoid long periods of time when the processor cannot be interrupted.
+
+35
+00:04:24,000 --> 00:04:36,000
+Some ISAs have complex multi-cycle instructions, e.g., block move instructions where a single instruction makes many memory accesses as it moves a block of data from one location to another.
+
+36
+00:04:36,000 --> 00:04:43,000
+In designing the ISA, we need to avoid such instructions or design them so that they can be interrupted and restarted.
+
+37
+00:04:43,000 --> 00:04:48,000
+The biggest problem comes when we're executing another interrupt handler in kernel mode.
+
+38
+00:04:48,000 --> 00:04:58,000
+In kernel mode, interrupts are disabled, so the actual latency will be determined by the time it takes to complete the current interrupt handler in addition to the other costs mentioned above.
+
+39
+00:04:58,000 --> 00:05:06,000
+This latency is not under the control of the CPU designer and will depend on the particular application.
+
+40
+00:05:06,000 --> 00:05:11,000
+Writing programs with hard real-time constraints can get complicated!
+
+41
+00:05:11,000 --> 00:05:16,000
+Our goal is to bound and minimize interrupt latency.
+
+42
+00:05:16,000 --> 00:05:21,000
+We'll do this by optimizing the cost of taking an interrupt and dispatching to the correct handler code.
+
+43
+00:05:21,000 --> 00:05:25,000
+We'll avoid instructions whose execution time is data dependent.
+
+44
+00:05:25,000 --> 00:05:29,000
+And we'll work to minimize the time spent in kernel mode.
+
+45
+00:05:29,000 --> 00:05:37,000
+But even with all these measures, we'll see that in some cases we'll have to modify our system to allow interrupts even in kernel mode.
+
+46
+00:05:37,000 --> 00:05:47,000
+Next we'll look at some concrete examples and see what mechanisms are required to make guarantees about hard real-time constraints.
+

@@ -1,0 +1,192 @@
+0
+00:00:00,000 --> 00:00:05,000
+Let's turn our attention to how the operating system (OS) deals with input/output devices.
+
+1
+00:00:05,000 --> 00:00:08,000
+There are actually two parts to the discussion.
+
+2
+00:00:08,000 --> 00:00:13,000
+First, we'll talk about how the OS interacts with the devices themselves.
+
+3
+00:00:13,000 --> 00:00:17,000
+This will involve a combination of interrupt handlers and kernel buffers.
+
+4
+00:00:17,000 --> 00:00:25,000
+Then we'll discuss how supervisor calls access the kernel buffers in response to requests from user-mode processes.
+
+5
+00:00:25,000 --> 00:00:33,000
+As we'll see, this can get a bit tricky when the OS cannot complete the request at the time the SVC was executed.
+
+6
+00:00:33,000 --> 00:00:35,000
+Here's the plan!
+
+7
+00:00:35,000 --> 00:00:40,000
+When the user types a key on the keyboard, the keyboard triggers an interrupt request to the CPU.
+
+8
+00:00:40,000 --> 00:00:49,000
+The interrupt suspends execution of the currently-running process and executes the handler whose job it is to deal with this particular I/O event.
+
+9
+00:00:49,000 --> 00:00:59,000
+In this case, the keyboard handler reads the character from the keyboard and saves it in a kernel buffer associated with the process that has been chosen to receive incoming keystrokes.
+
+10
+00:00:59,000 --> 00:01:05,000
+In the language of OSes, we'd say that process has the keyboard focus.
+
+11
+00:01:05,000 --> 00:01:12,000
+This transfer takes just a handful of instructions and when the handler exits, we resume running the interrupted process.
+
+12
+00:01:12,000 --> 00:01:20,000
+Assuming the interrupt request is serviced promptly, the CPU can easily keep up with the arrival of typed characters.
+
+13
+00:01:20,000 --> 00:01:24,000
+Humans are pretty slow compared to the rate of executing instructions!
+
+14
+00:01:24,000 --> 00:01:29,000
+But the buffer in the kernel can hold only so many characters before it fills up.
+
+15
+00:01:29,000 --> 00:01:31,000
+What happens then?
+
+16
+00:01:31,000 --> 00:01:33,000
+Well, there are a couple of choices.
+
+17
+00:01:33,000 --> 00:01:41,000
+Overwriting characters received earlier doesn't make much sense: why keep later characters if the earlier ones have been discarded.
+
+18
+00:01:41,000 --> 00:01:49,000
+Better that the CPU discard any characters received after the buffer was full, but it should give some indication that it's doing so.
+
+19
+00:01:49,000 --> 00:01:57,000
+And, in fact, many systems beep at the user to signal that the character they've just typed is being ignored.
+
+20
+00:01:57,000 --> 00:02:07,000
+At some later time, a user-mode program executes a ReadKey() supervisor call, requesting that the OS return the next character in R0.
+
+21
+00:02:07,000 --> 00:02:19,000
+In the OS, the ReadKey SVC handler grabs the next character from the buffer, places it in the user's R0, and resumes execution at the instruction following the SVC.
+
+22
+00:02:19,000 --> 00:02:23,000
+There are few tricky bits we need to figure out.
+
+23
+00:02:23,000 --> 00:02:35,000
+The ReadKey() SVC is what we call a "blocking I/O" request, i.e., the program assumes that when the SVC returns, the next character is in R0.
+
+24
+00:02:35,000 --> 00:02:44,000
+If there isn't (yet) a character to be returned, execution should be "blocked", i.e., suspended, until such time that a character is available.
+
+25
+00:02:44,000 --> 00:02:53,000
+Many OSes also provide for non-blocking I/O requests, which always return immediately with both a status flag and a result.
+
+26
+00:02:53,000 --> 00:03:02,000
+The program can check the status flag to see if there was a character and do the right thing if there wasn't, e.g., reissue the request at a later time.
+
+27
+00:03:02,000 --> 00:03:21,000
+Note that the user-mode program didn't have any direct interaction with the keyboard, i.e., it's not constantly polling the device to see if there's a keystroke to be processed. .312 Instead, we're using an "event-driven" approach, where the device signals the OS, via an interrupt, when it needs attention.
+
+28
+00:03:21,000 --> 00:03:24,000
+This is an elegant separation of responsibilities.
+
+29
+00:03:24,000 --> 00:03:32,000
+Imagine how cumbersome it would be if every program had to check constantly to see if there were pending I/O operations.
+
+30
+00:03:32,000 --> 00:03:43,000
+Our event-driven organization provides for on-demand servicing of devices, but doesn't devote CPU resources to the I/O subsystem until there's actually work to be done.
+
+31
+00:03:43,000 --> 00:03:50,000
+The interrupt-driven OS interactions with I/O devices are completely transparent to user programs.
+
+32
+00:03:50,000 --> 00:03:56,000
+Here's sketch of what the OS keyboard handler code might actually look like.
+
+33
+00:03:56,000 --> 00:04:04,000
+Depending on the hardware, the CPU might access device status and data using special I/O instructions in the ISA.
+
+34
+00:04:04,000 --> 00:04:15,000
+For example, in the simulated Beta used for lab assignments, there's a RDCHAR() instruction for reading keyboard characters and a CLICK() instruction for reading the coordinates of a mouse click.
+
+35
+00:04:15,000 --> 00:04:25,000
+Another common approach is to use "memory-mapped I/O", where a portion of the kernel address space is devoted to servicing I/O devices.
+
+36
+00:04:25,000 --> 00:04:38,000
+In this scheme, ordinary LD and ST store instructions are used to access specific addresses, which the CPU recognizes as accesses to the keyboard or mouse device interfaces.
+
+37
+00:04:38,000 --> 00:04:41,000
+This is the scheme shown in the code here.
+
+38
+00:04:41,000 --> 00:04:51,000
+The C data structure represents the two I/O locations devoted to the keyboard: one for status and one for the actual keyboard data.
+
+39
+00:04:51,000 --> 00:05:02,000
+The keyboard interrupt handler reads the keystroke data from the keyboard and places the character into the next location in the circular character buffer in the kernel.
+
+40
+00:05:02,000 --> 00:05:08,000
+In real life keyboard processing is usually a bit more complicated.
+
+41
+00:05:08,000 --> 00:05:16,000
+What one actually reads from a keyboard is a key number and a flag indicating whether the event is a key press or a key release.
+
+42
+00:05:16,000 --> 00:05:23,000
+Knowing the keyboard layout, the OS translates the key number into the appropriate ASCII character,
+
+43
+00:05:23,000 --> 00:05:30,000
+dealing with complications like holding down the shift key or control key to indicate a capital character or a control character.
+
+44
+00:05:30,000 --> 00:05:43,000
+And certain combination of keystrokes, e.g., CTRL-ALT-DEL on a Windows system, are interpreted as special user commands to start running particular applications like the Task Manager.
+
+45
+00:05:43,000 --> 00:05:55,000
+Many OSes let the user specify whether they want "raw" keyboard input (i.e., the key numbers and status) or "digested" input (i.e., ASCII characters).
+
+46
+00:05:55,000 --> 00:06:00,000
+Whew!  Who knew that processing keystrokes could be so complicated!
+
+47
+00:06:00,000 --> 00:06:07,000
+Next, we'll figure out how to code the associated supervisor call that lets user programs read characters.
+

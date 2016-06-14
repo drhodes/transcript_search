@@ -1,0 +1,288 @@
+0
+00:00:00,000 --> 00:00:07,000
+When a user-mode program wants to read a typed character it executes a ReadKey() SVC.
+
+1
+00:00:07,000 --> 00:00:20,000
+The binary representation of the SVC has an illegal value in the opcode field, so the CPU hardware causes an exception, which starts executing the illegal opcode handler in the OS.
+
+2
+00:00:20,000 --> 00:00:31,000
+The OS handler recognizes the illegal opcode value as being an SVC and uses the low-order bits of the SVC instruction to determine which sub-handler to call.
+
+3
+00:00:31,000 --> 00:00:37,000
+Here's our first draft for the ReadKey sub-handler, this time written in C.
+
+4
+00:00:37,000 --> 00:00:46,000
+The handler starts by looking at the process table entry for the current process to determine which keyboard buffer holds the characters for the process.
+
+5
+00:00:46,000 --> 00:00:51,000
+Let's assume for the moment the buffer is *not* empty and skip to the last line,
+
+6
+00:00:51,000 --> 00:01:01,000
+which reads the character from the buffer and uses it to replace the saved value for the user's R0 in the array holding the saved register values.
+
+7
+00:01:01,000 --> 00:01:11,000
+When the handler exits, the OS will reload the saved registers and resume execution of the user-mode program with the just-read character in R0.
+
+8
+00:01:11,000 --> 00:01:16,000
+Now let's figure what to do when the keyboard buffer is empty.
+
+9
+00:01:16,000 --> 00:01:21,000
+The code shown here simply loops until the buffer is no longer empty.
+
+10
+00:01:21,000 --> 00:01:27,000
+The theory is that eventually the user will type a character, causing an interrupt,
+
+11
+00:01:27,000 --> 00:01:34,000
+which will run the keyboard interrupt handler discussed in the previous section, which will store a new character into the buffer.
+
+12
+00:01:34,000 --> 00:01:45,000
+This all sounds good until we remember that the SVC handler is running with the supervisor bit (PC[31]) set to 1, disabling interrupts.
+
+13
+00:01:45,000 --> 00:01:46,000
+Oops!
+
+14
+00:01:46,000 --> 00:01:53,000
+Since the keyboard interrupt will never happen, the while loop shown here is actually an infinite loop.
+
+15
+00:01:53,000 --> 00:02:04,000
+So if the user-mode program tries to read a character from an empty buffer, the system will appear to hang, not responding to any external inputs since interrupts are disabled.
+
+16
+00:02:04,000 --> 00:02:07,000
+Time to reach for the power switch :)
+
+17
+00:02:07,000 --> 00:02:14,000
+We'll fix the looping problem by adding code to subtract 4 from the saved value of the XP register before returning.
+
+18
+00:02:14,000 --> 00:02:16,000
+How does this fix the problem?
+
+19
+00:02:16,000 --> 00:02:28,000
+Recall that when the SVC illegal instruction exception happened, the CPU stored the PC+4 value of the illegal instruction in the user's XP register.
+
+20
+00:02:28,000 --> 00:02:38,000
+When the handler exits, the OS will resume execution of the user-mode program by reloading the registers and then executing a JMP(XP),
+
+21
+00:02:38,000 --> 00:02:42,000
+which would normally then execute the instruction *following* the SVC instruction.
+
+22
+00:02:42,000 --> 00:02:50,000
+By subtracting 4 from the saved XP value, it will be the SVC itself that gets re-executed.
+
+23
+00:02:50,000 --> 00:02:59,000
+That, of course, means we'll go through the same set of steps again, repeating the cycle until the keyboard buffer is no longer empty.
+
+24
+00:02:59,000 --> 00:03:11,000
+It's just a more complicated loop!  But with a crucial difference: one of the instructions -- the ReadKey() SVC -- is executed in user-mode with PC[31] = 0.
+
+25
+00:03:11,000 --> 00:03:21,000
+So during that cycle, if there's a pending interrupt from the keyboard, the device interrupt will supersede the execution of the ReadKey() and the keyboard buffer will be filled.
+
+26
+00:03:21,000 --> 00:03:32,000
+When the keyboard interrupt handler finishes, the ReadKey() SVC will be executed again, this time finding that the buffer is no longer empty.
+
+27
+00:03:32,000 --> 00:03:33,000
+Yah!
+
+28
+00:03:33,000 --> 00:03:39,000
+So this version of the handler actually works, with one small caveat.
+
+29
+00:03:39,000 --> 00:03:51,000
+If the buffer is empty, the user-mode program will continually re-execute the complicated user-mode/kernel-mode loop until the timer interrupt eventually transfers control to the next process.
+
+30
+00:03:51,000 --> 00:03:54,000
+This seems pretty inefficient.
+
+31
+00:03:54,000 --> 00:04:02,000
+Once we've checked and found the buffer empty, it would be better to give other processes a chance to run before we try again.
+
+32
+00:04:02,000 --> 00:04:04,000
+This problem is easy to fix!
+
+33
+00:04:04,000 --> 00:04:11,000
+We'll just add a call to Scheduler() right after arranging for the ReadKey() SVC to be re-executed.
+
+34
+00:04:11,000 --> 00:04:19,000
+The call to Scheduler() suspends execution of the current process and arranges for the next process to run when the handler exits.
+
+35
+00:04:19,000 --> 00:04:27,000
+Eventually the round-robin scheduling will come back to the current process and the ReadKey() SVC will try again.
+
+36
+00:04:27,000 --> 00:04:39,000
+With this simple one-line fix the system will spend much less time wasting cycles checking the empty buffer and instead use those cycles to run other, hopefully more productive, processes.
+
+37
+00:04:39,000 --> 00:04:45,000
+The cost is a small delay in restarting the program after a character is typed,
+
+38
+00:04:45,000 --> 00:04:57,000
+but typically the time slices for each process are small enough that one round of process execution happens more quickly than the time between two typed characters, so the extra delay isn't noticeable.
+
+39
+00:04:57,000 --> 00:05:04,000
+So now we have some insights into one of the traditional arguments against timesharing.
+
+40
+00:05:04,000 --> 00:05:06,000
+The argument goes as follows.
+
+41
+00:05:06,000 --> 00:05:12,000
+Suppose we have 10 processes, each of which takes 1 second to complete its computation.
+
+42
+00:05:12,000 --> 00:05:19,000
+Without timesharing, the first process would be done after 1 second, the second after 2 seconds, and so on.
+
+43
+00:05:19,000 --> 00:05:29,000
+With timesharing using, say, a 1/10 second time slice, all the processes will complete sometime after 10 seconds
+
+44
+00:05:29,000 --> 00:05:35,000
+since there's a little extra time needed for the hundred or so process switches that would happen before completion.
+
+45
+00:05:35,000 --> 00:05:45,000
+So in a timesharing system the time-to-completion for *all* processes is as long the worst-case completion time without time sharing!
+
+46
+00:05:45,000 --> 00:05:47,000
+So why bother with timesharing?
+
+47
+00:05:47,000 --> 00:05:51,000
+We saw one answer to this question earlier in this slide.
+
+48
+00:05:51,000 --> 00:05:59,000
+If a process can't make productive use of its time slice, it can donate those cycles to completion of some other task.
+
+49
+00:05:59,000 --> 00:06:08,000
+So in a system where most processes are waiting for some sort of I/O, timesharing is actually a great way of spending cycles where they'll do the most good.
+
+50
+00:06:08,000 --> 00:06:20,000
+If you open the Task Manager or Activity Monitor on the system you're using now, you'll see there are hundreds of processes, almost all of which are in some sort of I/O wait.
+
+51
+00:06:20,000 --> 00:06:32,000
+So timesharing does extract a cost when running compute-intensive computations, but in an actual system where there's a mix of I/O and compute tasks, time sharing is the way to go.
+
+52
+00:06:32,000 --> 00:06:39,000
+We can actually go one step further to ensure we don't run processes waiting for an I/O event that hasn't yet happened.
+
+53
+00:06:39,000 --> 00:06:51,000
+We'll add a status field to the process state indicating whether the process is ACTIVE (e.g., status is 0) or WAITING (e.g., status is non-zero).
+
+54
+00:06:51,000 --> 00:06:56,000
+We'll use different non-zero values to indicate what event the process is waiting for.
+
+55
+00:06:56,000 --> 00:07:01,000
+Then we'll change the Scheduler() to only run ACTIVE processes.
+
+56
+00:07:01,000 --> 00:07:05,000
+To see how this works, it's easiest to use a concrete example.
+
+57
+00:07:05,000 --> 00:07:13,000
+The UNIX OS has two kernel subroutines, sleep() and wakeup(), both of which require a non-zero argument.
+
+58
+00:07:13,000 --> 00:07:17,000
+The argument will be used as the value of the status field.
+
+59
+00:07:17,000 --> 00:07:19,000
+Let's see this in action.
+
+60
+00:07:19,000 --> 00:07:31,000
+When the ReadKey() SVC detects the buffer is empty, it calls sleep() with an argument that uniquely identifies the I/O event it's waiting for, in this case the arrival of a character in a particular buffer.
+
+61
+00:07:31,000 --> 00:07:37,000
+sleep() sets the process status to this unique identifier, then calls Scheduler().
+
+62
+00:07:37,000 --> 00:07:45,000
+Scheduler() has been modified to skip over processes with a non-zero status, not giving them a chance to run.
+
+63
+00:07:45,000 --> 00:07:57,000
+Meanwhile, a keyboard interrupt will cause the interrupt handler to add a character to the keyboard buffer and call wakeup() to signal any process waiting on that buffer.
+
+64
+00:07:57,000 --> 00:08:03,000
+Watch what happens when the kbdnum in the interrupt handler matches the kbdnum in the ReadKey() handler.
+
+65
+00:08:03,000 --> 00:08:11,000
+wakeup() loops through all processes, looking for ones that are waiting for this particular I/O event.
+
+66
+00:08:11,000 --> 00:08:16,000
+When it finds one, it sets the status for the process to zero, marking it as ACTIVE.
+
+67
+00:08:16,000 --> 00:08:24,000
+The zero status will cause the process to run again next time the Scheduler() reaches it in its round-robin search for things to do.
+
+68
+00:08:24,000 --> 00:08:37,000
+The effect is that once a process goes to sleep() WAITING for an event, it's not considered for execution again until the event occurs and wakeup() marks the process as ACTIVE.
+
+69
+00:08:37,000 --> 00:08:38,000
+Pretty neat!
+
+70
+00:08:38,000 --> 00:08:44,000
+Another elegant fix to ensure that no CPU cycles are wasted on useless activity.
+
+71
+00:08:44,000 --> 00:08:52,000
+I can remember how impressed I was when I first saw this many years ago in a (very) early version of the UNIX code :)
+

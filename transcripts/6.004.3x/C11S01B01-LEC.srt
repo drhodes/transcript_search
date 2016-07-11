@@ -1,0 +1,204 @@
+0
+00:00:00,000 --> 00:00:06,000
+Computer systems bring together many technologies and harness them to provide fast execution of programs.
+
+1
+00:00:06,000 --> 00:00:11,000
+Some of these technologies are relatively new, others have been with us for decades.
+
+2
+00:00:11,000 --> 00:00:18,000
+Each of the system components comes with a detailed specification of their functionality and interface.
+
+3
+00:00:18,000 --> 00:00:29,000
+The expectation is that system designers can engineer the system based on the component specifications without having to know the details of the implementations of each component.
+
+4
+00:00:29,000 --> 00:00:40,000
+This is good since many of the underlying technologies change, often in ways that allow the components to become smaller, faster, cheaper, more energy efficient, and so on.
+
+5
+00:00:40,000 --> 00:00:48,000
+Assuming the new components still implement same interfaces, they can be integrated into the system with very little effort.
+
+6
+00:00:48,000 --> 00:00:55,000
+The moral of this story is that the important part of the system architecture is the interfaces.
+
+7
+00:00:55,000 --> 00:01:02,000
+Our goal is to design interface specifications that can survive many generations of technological change.
+
+8
+00:01:02,000 --> 00:01:12,000
+One approach to long-term survival is to base the specification on a useful abstraction that hides most, if not all, of the low-level implementation details.
+
+9
+00:01:12,000 --> 00:01:17,000
+Operating systems provide many interfaces that have remained stable for many years.
+
+10
+00:01:17,000 --> 00:01:28,000
+For example, network interfaces that reliably deliver streams of bytes to named hosts, hiding the details of packets, sockets, error detection and recovery, etc.
+
+11
+00:01:28,000 --> 00:01:37,000
+Or windowing and graphics systems that render complex images, shielding the application from details about the underlying graphics engine.
+
+12
+00:01:37,000 --> 00:01:44,000
+Or journaled file systems that behind-the-scenes defend against corruption in the secondary storage arrays.
+
+13
+00:01:44,000 --> 00:01:55,000
+Basically, we're long since past the point where we can afford to start from scratch each time the integrated circuit gurus are able to double the number of transistors on a chip,
+
+14
+00:01:55,000 --> 00:02:01,000
+or the communication wizards figure out how to go from 1GHz networks to 10GHz networks,
+
+15
+00:02:01,000 --> 00:02:07,000
+or the memory mavens are able to increase the size of main memory by a factor of 4.
+
+16
+00:02:07,000 --> 00:02:17,000
+The interfaces that insulate us from technological change are critical to ensure that improved technology isn't a constant source of disruption.
+
+17
+00:02:17,000 --> 00:02:26,000
+There are some famous examples of where an apparently convenient choice of interface has had embarrassing long-term consequences.
+
+18
+00:02:26,000 --> 00:02:36,000
+For example, back in the days of stand-alone computing, different ISAs made different choices on how to store multi-byte numeric values in main memory.
+
+19
+00:02:36,000 --> 00:02:50,000
+IBM architectures store the most-significant byte in the lowest address (so called "big endian"), while Intel's x86 architectures store the least-significant byte first (so called "little endian").
+
+20
+00:02:50,000 --> 00:02:59,000
+But this leads to all sorts of complications in a networked world where numeric data is often transferred from system to system.
+
+21
+00:02:59,000 --> 00:03:06,000
+This is a prime example of a locally-optimal choice having an unfortunate global impact.
+
+22
+00:03:06,000 --> 00:03:11,000
+As the phrase goes: "a moment of convenience, a lifetime of regret."
+
+23
+00:03:11,000 --> 00:03:22,000
+Another example is the system-level communication strategy chosen for the first IBM PC, the original personal computer based Intel CPU chips.
+
+24
+00:03:22,000 --> 00:03:33,000
+IBM built their expansion bus for adding I/O peripherals, memory cards, etc., by simply using the interface signals provided by then-current x86 CPU.
+
+25
+00:03:33,000 --> 00:03:44,000
+So the width of the data bus, the number of address pins, the data-transfer protocol, etc. where are exactly as designed for interfacing to that particular CPU.
+
+26
+00:03:44,000 --> 00:03:50,000
+A logical choice since it got the job done while keeping costs as low a possible.
+
+27
+00:03:50,000 --> 00:04:03,000
+But that choice quickly proved unfortunate as newer, higher-performance CPUs were introduced, capable of addressing more memory or providing 32-bit instead of 16-bit external data paths.
+
+28
+00:04:03,000 --> 00:04:12,000
+So system architects were forced into offering customers the Hobson's choice of crippling system throughput for the sake of backward compatibility,
+
+29
+00:04:12,000 --> 00:04:19,000
+or discarding the networking card they bought last year since it was now incompatible with this year's system.
+
+30
+00:04:19,000 --> 00:04:22,000
+But there are success stories too.
+
+31
+00:04:22,000 --> 00:04:35,000
+The System/360 interfaces chosen by IBM in the early 1960s carried over to the System/370 in the 70's and 80's and to the Enterprise System Architecture/390 of the 90's.
+
+32
+00:04:35,000 --> 00:04:46,000
+Customers had the expectation that software written for the earlier machines would continue to work on the newer systems and IBM was able to fulfill that expectation.
+
+33
+00:04:46,000 --> 00:04:59,000
+Maybe the most notable long-term interface success is the design the TCP and IP network protocols in the early 70's, which formed the basis for most packet-based network communication.
+
+34
+00:04:59,000 --> 00:05:09,000
+A recent refresh expanded the network addresses from 32 to 128 bits, but that was largely invisible to applications using the network.
+
+35
+00:05:09,000 --> 00:05:19,000
+It was a remarkably prescient set of engineering choices that stood the test of time for over four decades of exponential growth in network connectivity.
+
+36
+00:05:19,000 --> 00:05:27,000
+Today's lecture topic is figuring out the appropriate interface choices for interconnecting system components.
+
+37
+00:05:27,000 --> 00:05:37,000
+In the earliest systems these connections were very ad hoc in the sense that the protocols and physical implementation were chosen independently for each connection that had to be made.
+
+38
+00:05:37,000 --> 00:05:49,000
+The cable connecting the CPU box to the memory box (yes, in those days, they lived in separate 19" racks!) was different than the cable connecting the CPU to the disk.
+
+39
+00:05:49,000 --> 00:05:55,000
+Improving circuit technologies allowed system components to shrink from cabinet-size to board-size
+
+40
+00:05:55,000 --> 00:06:04,000
+and system engineers designed a modular packaging scheme that allowed users to mix-and-match board types that plugged into a communication backplane.
+
+41
+00:06:04,000 --> 00:06:14,000
+The protocols and signals on the backplane reflected the different choices made by each vendor -- IBM boards didn't plug into Digital Equipment backplanes, and vice versa.
+
+42
+00:06:14,000 --> 00:06:27,000
+This evolved into some standardized communication backplanes that allowed users to do their own system integration, choosing different vendors for their CPU, memory, networking, etc.
+
+43
+00:06:27,000 --> 00:06:31,000
+Healthy competition quickly brought prices down and drove innovation.
+
+44
+00:06:31,000 --> 00:06:44,000
+However this promising development was overtaken by rapidly improving performance, which required communication bandwidths that simply could not be supported across a multi-board backplane.
+
+45
+00:06:44,000 --> 00:06:55,000
+These demands for higher performance and the ability to integrate many different communication channels into a single chip, lead to a proliferation of different channels.
+
+46
+00:06:55,000 --> 00:07:05,000
+In many ways, the system architecture was reminiscent of the original systems -- ad-hoc purpose-built communication channels specialized to a specific task.
+
+47
+00:07:05,000 --> 00:07:15,000
+As we'll see, engineering considerations have led to the widespread adoption of general-purpose unidirectional point-to-point communication channels.
+
+48
+00:07:15,000 --> 00:07:21,000
+There are still several types of channels depending on the required performance, the distance travelled, etc.,
+
+49
+00:07:21,000 --> 00:07:28,000
+but asynchronous point-to-point channels have mostly replaced the synchronous multi-signal channels of earlier systems.
+
+50
+00:07:28,000 --> 00:07:41,000
+Most system-level communications involve signaling over wires, so next we'll look into some the engineering issues we've had to deal with as communication speeds have increased from kHz to GHz.
+

@@ -1,0 +1,196 @@
+0
+00:00:00,000 --> 00:00:12,000
+Network technologies were developed to connect components (in this case individual computer systems) separated by larger distances, i.e., distances measured in meters instead of centimeters.
+
+1
+00:00:12,000 --> 00:00:17,000
+Communicating over these larger distances led to different design tradeoffs.
+
+2
+00:00:17,000 --> 00:00:23,000
+In early networks, information was sent as a sequence of bits over the shared communication medium.
+
+3
+00:00:23,000 --> 00:00:28,000
+The bits were organized into packets, each containing the address of the destination.
+
+4
+00:00:28,000 --> 00:00:38,000
+Packets also included a checksum used to detect errors in transmission and the protocol supported the ability to request the retransmission of corrupted packets.
+
+5
+00:00:38,000 --> 00:00:46,000
+The software controlling the network is divided into a "stack" of modules, each implementing a different communication abstraction.
+
+6
+00:00:46,000 --> 00:00:53,000
+The lowest-level physical layer is responsible for transmitting and receiving an individual packet of bits.
+
+7
+00:00:53,000 --> 00:01:05,000
+Bit errors are detected and corrected, and packets with uncorrectable errors are discarded. There are different physical-layer modules available for the different types of physical networks.
+
+8
+00:01:05,000 --> 00:01:09,000
+The network layer deals with the addressing and routing of packets.
+
+9
+00:01:09,000 --> 00:01:20,000
+Clever routing algorithms find the shortest communication path through the multi-hop network and deal with momentary or long-term outages on particular network links.
+
+10
+00:01:20,000 --> 00:01:29,000
+The transport layer is responsible for providing the reliable communication of a stream of data, dealing with the issues of discarded or out-of-order packets.
+
+11
+00:01:29,000 --> 00:01:41,000
+In an effort to optimize network usage and limit packet loses due to network congestion, the transport layer deals with flow control, i.e., the rate at which packets are sent.
+
+12
+00:01:41,000 --> 00:01:50,000
+A key idea in the networking community is the notion of building a reliable communication channel on top of a "best efforts" packet network.
+
+13
+00:01:50,000 --> 00:01:57,000
+Higher layers of the protocol are designed so that its possible to recover from errors in the lower layers.
+
+14
+00:01:57,000 --> 00:02:04,000
+This has proven to be much more cost-effective and robust than trying to achieve 100% reliability at each layer.
+
+15
+00:02:04,000 --> 00:02:15,000
+As we saw in the previous section, there are a lot of electrical issues when trying to communicate over a shared wire with multiple drivers and receivers.
+
+16
+00:02:15,000 --> 00:02:24,000
+Slowing down the rate of communication helps to solve the problems, but "slow" isn't in the cards for today's high-performance systems.
+
+17
+00:02:24,000 --> 00:02:36,000
+Experience in the network world has shown that the fastest and least problematic communication channels have a single driver communicating with a single receiver, what's called a point-to-point link.
+
+18
+00:02:36,000 --> 00:02:40,000
+Using differential signaling is particularly robust.
+
+19
+00:02:40,000 --> 00:02:45,000
+With differential signaling, the receiver measures the voltage difference across the two signaling wires.
+
+20
+00:02:45,000 --> 00:02:57,000
+Electrical effects that might induce voltage noise on one signaling wire will affect the other in equal measure, so the voltage difference will be largely unaffected by most noise.
+
+21
+00:02:57,000 --> 00:03:01,000
+Almost all high-performance communication links use differential signaling.
+
+22
+00:03:01,000 --> 00:03:11,000
+If we're sending digital data, does that mean we also have to send a separate clock signal so the receiver knows when to sample the signal to determine the next bit?
+
+23
+00:03:11,000 --> 00:03:20,000
+With some cleverness, it turns out that we can recover the timing information from the received signal assuming we know the nominal clock period at the transmitter.
+
+24
+00:03:20,000 --> 00:03:32,000
+If the transmitter changes the bit its sending at the rising edge of the transmitter's clock, then the receiver can use the transitions in the received waveform to infer the timing for some of the clock edges.
+
+25
+00:03:32,000 --> 00:03:40,000
+Then the receiver can use its knowledge of the transmitter's nominal clock period to infer the location of the remaining clock edges.
+
+26
+00:03:40,000 --> 00:03:51,000
+It does this by using a phase-locked loop to generate a local facsimile of the transmitter's clock, using any received transitions to correct the phase and period of the local clock.
+
+27
+00:03:51,000 --> 00:04:02,000
+The transmitter adds a training sequence of bits at the front of packet to ensure that the receiver's phased-lock loop is properly synchronized before the packet data itself is transmitted.
+
+28
+00:04:02,000 --> 00:04:11,000
+A unique bit sequence is used to separate the training signal from the packet data so the receiver can tell exactly where the packet starts
+
+29
+00:04:11,000 --> 00:04:16,000
+even if it missed a few training bits while the clocks were being properly synchronized.
+
+30
+00:04:16,000 --> 00:04:25,000
+Once the receiver knows the timing of the clock edges, it can then sample the incoming waveform towards the end of each clock period to determine the transmitted bit.
+
+31
+00:04:25,000 --> 00:04:33,000
+To keep the local clock in sync with the transmitter's clock, the incoming waveform needs to have reasonably frequent transitions.
+
+32
+00:04:33,000 --> 00:04:40,000
+But if the transmitter is sending say, all zeroes, how can we guarantee frequent-enough clock edges?
+
+33
+00:04:40,000 --> 00:04:53,000
+The trick, invented by IBM, is for the transmitter to take the stream of message bits and re-encode them into a bit stream that is guaranteed to have transitions no matter what the message bits are.
+
+34
+00:04:53,000 --> 00:05:06,000
+The most commonly used encoding is 8b10b, where 8 message bits are encoded into 10 transmitted bits, where the encoding guarantees a transition at least every 6 bit times.
+
+35
+00:05:06,000 --> 00:05:13,000
+Of course, the receiver has to reverse the 8b10b encoding to recover the actual message bits.
+
+36
+00:05:13,000 --> 00:05:14,000
+Pretty neat!
+
+37
+00:05:14,000 --> 00:05:20,000
+The benefit of this trick is that we truly only need to send a single stream of bits.
+
+38
+00:05:20,000 --> 00:05:28,000
+The receiver will be able to recover both the timing information and the data without also needing to transmit a separate clock signal.
+
+39
+00:05:28,000 --> 00:05:35,000
+Using these lessons, networks have evolved from using shared communication channels to using point-to-point links.
+
+40
+00:05:35,000 --> 00:05:45,000
+Today local-area networks use 10, 100, or 1000 BaseT wiring which includes separate differential pairs for sending and receiving,
+
+41
+00:05:45,000 --> 00:05:52,000
+i.e., each sending or receiving channel is unidirectional with a single driver and single receiver.
+
+42
+00:05:52,000 --> 00:06:01,000
+The network uses separate switches and routers to receive packets from a sender and then forward the packets over a point-to-point link to the next switch,
+
+43
+00:06:01,000 --> 00:06:07,000
+and so on, across multiple point-to-point links until the packet arrives at its destination.
+
+44
+00:06:07,000 --> 00:06:18,000
+System-level connections have evolved to use the same communication strategy: point-to-point links with switches for routing packets to their intended destination.
+
+45
+00:06:18,000 --> 00:06:27,000
+Note that communication along each link is independent, so a network with many links can actually support a lot of communication bandwidth.
+
+46
+00:06:27,000 --> 00:06:34,000
+With a small amount of packet buffering in the switches to deal with momentary contention for a particular link,
+
+47
+00:06:34,000 --> 00:06:41,000
+this is a very effective strategy for moving massive amounts of information from one component to the next.
+
+48
+00:06:41,000 --> 00:06:46,000
+In the next section, we'll look at some of the more interesting details.
+

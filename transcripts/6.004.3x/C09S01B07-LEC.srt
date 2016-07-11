@@ -1,0 +1,252 @@
+0
+00:00:00,000 --> 00:00:08,000
+If the necessary synchronization requires acquiring more than one lock, there are some special considerations that need to be taken into account.
+
+1
+00:00:08,000 --> 00:00:14,000
+For example, the code below implements the transfer of funds from one bank account to another.
+
+2
+00:00:14,000 --> 00:00:24,000
+The code assumes there is a separate semaphore lock for each account and since it needs to adjust the balance of two accounts, it acquires the lock for each account.
+
+3
+00:00:24,000 --> 00:00:30,000
+Consider what happens if two customers try simultaneous transfers between their two accounts.
+
+4
+00:00:30,000 --> 00:00:36,000
+The top customer will try to acquire the locks for accounts 6005 and 6004.
+
+5
+00:00:36,000 --> 00:00:42,000
+The bottom customer tries to acquire the same locks, but in the opposite order.
+
+6
+00:00:42,000 --> 00:00:48,000
+Once a customer has acquired both locks, the transfer code will complete, releasing the locks.
+
+7
+00:00:48,000 --> 00:01:00,000
+But what happens if the top customer acquires his first lock (for account 6005) and the bottom customer simultaneously acquires his first lock (for account 6004).
+
+8
+00:01:00,000 --> 00:01:11,000
+So far, so good, but now each customer will be not be successful in acquiring their second lock, since those locks are already held by the other customer!
+
+9
+00:01:11,000 --> 00:01:19,000
+This situation is called a "deadlock" or "deadly embrace" because there is no way execution for either process will resume.
+
+10
+00:01:19,000 --> 00:01:24,000
+Both will wait indefinitely to acquire a lock that will never be available.
+
+11
+00:01:24,000 --> 00:01:30,000
+Obviously, synchronization involving multiple resources requires a bit more thought.
+
+12
+00:01:30,000 --> 00:01:35,000
+The problem of deadlock is elegantly illustrated by the Dining Philosophers problem.
+
+13
+00:01:35,000 --> 00:01:39,000
+Here there are, say, 5 philosophers waiting to eat.
+
+14
+00:01:39,000 --> 00:01:44,000
+Each requires two chopsticks in order to proceed, and there are 5 chopsticks on the table.
+
+15
+00:01:44,000 --> 00:01:48,000
+The philosophers follow a simple algorithm.
+
+16
+00:01:48,000 --> 00:01:53,000
+First they pick up the chopstick on their left, then the chopstick on their right.
+
+17
+00:01:53,000 --> 00:02:02,000
+When they have both chopsticks they eat until they're done, at which point they return both chopsticks to the table, perhaps enabling one of their neighbors to pick them up and begin eating.
+
+18
+00:02:02,000 --> 00:02:09,000
+Again, we see the basic setup of needing two (or more) resources before the task can complete.
+
+19
+00:02:09,000 --> 00:02:12,000
+Hopefully you can see the problem that may arise...
+
+20
+00:02:12,000 --> 00:02:23,000
+If all philosophers pick up the chopstick on their left, then all the chopsticks have been acquired, and none of the philosophers will be able to acquire their second chopstick and eat.
+
+21
+00:02:23,000 --> 00:02:24,000
+Another deadlock!
+
+22
+00:02:24,000 --> 00:02:28,000
+Here are the conditions required for a deadlock:
+
+23
+00:02:28,000 --> 00:02:33,000
+1. Mutual exclusion, where a particular resource can only be acquired by one process at a time.
+
+24
+00:02:33,000 --> 00:02:40,000
+2. Hold-and-wait, where a process holds allocated resources while waiting to acquire the next resource.
+
+25
+00:02:40,000 --> 00:02:47,000
+3. No preemption, where a resource cannot be removed from the process which acquired it.
+
+26
+00:02:47,000 --> 00:02:52,000
+Resources are only released after the process has completed its transaction.
+
+27
+00:02:52,000 --> 00:02:59,000
+4. Circular wait, where resources needed by one process are held by another, and vice versa.
+
+28
+00:02:59,000 --> 00:03:03,000
+How can we solve the problem of deadlocks when acquiring multiple resources?
+
+29
+00:03:03,000 --> 00:03:11,000
+Either we avoid the problem to begin with, or we detect that deadlock has occurred and implement a recovery strategy.
+
+30
+00:03:11,000 --> 00:03:13,000
+Both techniques are used in practice.
+
+31
+00:03:13,000 --> 00:03:20,000
+In the Dining Philosophers problem, deadlock can be avoided with a small modification to the algorithm.
+
+32
+00:03:20,000 --> 00:03:26,000
+We start by assigning a unique number to each chopstick to establish a global ordering of all the resources,
+
+33
+00:03:26,000 --> 00:03:35,000
+then rewrite the code to acquire resources using the global ordering to determine which resource to acquire first, which second, and so on.
+
+34
+00:03:35,000 --> 00:03:42,000
+With the chopsticks numbered, the philosophers pick up the lowest-numbered chopstick from either their left or right.
+
+35
+00:03:42,000 --> 00:03:48,000
+Then they pick up the other, higher-numbered chopstick, eat, and then return the chopsticks to the table.
+
+36
+00:03:48,000 --> 00:03:51,000
+How does this avoid deadlock?
+
+37
+00:03:51,000 --> 00:03:56,000
+Deadlock happens when all the chopsticks have been picked up but no philosopher can eat.
+
+38
+00:03:56,000 --> 00:04:08,000
+If all the chopsticks have been been picked up, that means some philosopher has picked up the highest-numbered chopstick and so must have earlier picked up the lower-numbered chopstick on his other side.
+
+39
+00:04:08,000 --> 00:04:15,000
+So that philosopher can eat then return both chopsticks to the table, breaking the hold-and-wait cycle.
+
+40
+00:04:15,000 --> 00:04:28,000
+So if all the processes in the system can agree upon a global ordering for the resources they require, then acquire them in order, there will be no possibility of a deadlock caused by a hold-and-wait cycle.
+
+41
+00:04:28,000 --> 00:04:33,000
+A global ordering is easy to arrange in our banking code for the transfer transaction.
+
+42
+00:04:33,000 --> 00:04:41,000
+We'll modify the code to first acquire the lock for the lower-numbered account, then acquire the lock for the higher-numbered account.
+
+43
+00:04:41,000 --> 00:04:47,000
+Now, both customers will first try to acquire the lock for the 6004 account.
+
+44
+00:04:47,000 --> 00:04:54,000
+The customer that succeeds then can acquire the lock for the 6005 account and complete the transaction.
+
+45
+00:04:54,000 --> 00:05:02,000
+The key to deadlock avoidance was that customers contented for the lock for the *first* resource they both needed.
+
+46
+00:05:02,000 --> 00:05:14,000
+Acquiring that lock ensured they would be able to acquire the remainder of the shared resources without fear that they would already be allocated to another process in a way that could cause a hold-and-wait cycle.
+
+47
+00:05:14,000 --> 00:05:23,000
+Establishing and using a global order for shared resources is possible when we can modify all processes to cooperate.
+
+48
+00:05:23,000 --> 00:05:27,000
+Avoiding deadlock without changing the processes is a harder problem.
+
+49
+00:05:27,000 --> 00:05:40,000
+For example, at the operating system level, it would be possible to modify the WAIT SVC to detect circular wait and terminate one of the WAITing processes, releasing its resources and breaking the deadlock.
+
+50
+00:05:40,000 --> 00:05:45,000
+The other strategy we mentioned was detection and recovery.
+
+51
+00:05:45,000 --> 00:05:56,000
+Database systems detect when there's been an external access to the shared data used by a particular transaction, which causes the database to abort the transaction.
+
+52
+00:05:56,000 --> 00:06:08,000
+When issuing a transaction to a database, the programmer specifies what should happen if the transaction is aborted, e.g., she can specify that the transaction be retried.
+
+53
+00:06:08,000 --> 00:06:20,000
+The database remembers all the changes to shared data that happen during a transaction and only changes the master copy of the shared data when it is sure that the transaction will not be aborted,
+
+54
+00:06:20,000 --> 00:06:23,000
+at which point the changes are committed to the database.
+
+55
+00:06:23,000 --> 00:06:30,000
+In summary, we saw that organizing an application as communicating processes is often a convenient way to go.
+
+56
+00:06:30,000 --> 00:06:43,000
+We used semaphores to synchronize the execution of the different processes, providing guarantees that certain precedence constraints would be met, even between statements in different processes.
+
+57
+00:06:43,000 --> 00:06:54,000
+We also introduced the notion of critical code sections and mutual exclusion constraints that guaranteed that a code sequence would be executed without interruption by another process.
+
+58
+00:06:54,000 --> 00:07:00,000
+We saw that semaphores could also be used to implement those mutual exclusion constraints.
+
+59
+00:07:00,000 --> 00:07:08,000
+Finally we discussed the problem of deadlock that can occur when multiple processes must acquire multiple shared resources,
+
+60
+00:07:08,000 --> 00:07:16,000
+and we proposed several solutions based on a global ordering of resources or the ability to restart a transaction.
+
+61
+00:07:16,000 --> 00:07:27,000
+Synchronization primitives play a key role in the world of "big data" where there are vast amounts of shared data, or when trying to coordinate the execution of thousands of processes in the cloud.
+
+62
+00:07:27,000 --> 00:07:36,000
+Understanding synchronization issues and their solutions is a key skill when writing most modern applications.
+

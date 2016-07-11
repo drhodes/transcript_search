@@ -1,0 +1,128 @@
+0
+00:00:00,000 --> 00:00:03,000
+Now let's figure out how to implement semaphores.
+
+1
+00:00:03,000 --> 00:00:14,000
+They are themselves shared data and implementing the WAIT and SIGNAL operations will require read/modify/write sequences that must be executed as critical sections.
+
+2
+00:00:14,000 --> 00:00:20,000
+Normally we'd use a lock semaphore to implement the mutual exclusion constraint for critical sections.
+
+3
+00:00:20,000 --> 00:00:24,000
+But obviously we can't use semaphores to implement semaphores!
+
+4
+00:00:24,000 --> 00:00:31,000
+We have what's called a bootstrapping problem: we need to implement the required functionality from scratch.
+
+5
+00:00:31,000 --> 00:00:41,000
+Happily, if we're running on a timeshared processor with an uninterruptible OS kernel, we can use the supervisor call (SVC) mechanism to implement the required functionality.
+
+6
+00:00:41,000 --> 00:00:49,000
+We can also extend the ISA to include a special test-and-set instruction that will let us implement a simple lock semaphore,
+
+7
+00:00:49,000 --> 00:00:55,000
+which can then be used to protect critical sections that implement more complex semaphore semantics.
+
+8
+00:00:55,000 --> 00:01:10,000
+Single instructions are inherently atomic and, in a multi-core processor, will do what we want if the shared main memory supports reading the old value and writing a new value to a specific memory location as a single memory access.
+
+9
+00:01:10,000 --> 00:01:20,000
+There are other, more complex, software-only solutions that rely only on the atomicity of individual reads and writes to implement a simple lock.
+
+10
+00:01:20,000 --> 00:01:23,000
+For example, see "Dekker's Algorithm" on Wikipedia.
+
+11
+00:01:23,000 --> 00:01:26,000
+We'll look in more detail at the first two approaches.
+
+12
+00:01:26,000 --> 00:01:30,000
+Here are the OS handlers for the WAIT and SIGNAL supervisor calls.
+
+13
+00:01:30,000 --> 00:01:40,000
+Since SVCs are run kernel mode, they can't be interrupted, so the handler code is naturally executed as a critical section.
+
+14
+00:01:40,000 --> 00:01:47,000
+Both handlers expect the address of the semaphore location to be passed as an argument in the user's R0.
+
+15
+00:01:47,000 --> 00:02:00,000
+The WAIT handler checks the semaphore's value and if it's non-zero, the value is decremented and the handler resumes execution of the user's program at the instruction following the WAIT SVC.
+
+16
+00:02:00,000 --> 00:02:14,000
+If the semaphore is 0, the code arranges to re-execute the WAIT SVC when the user program resumes execution and then calls SLEEP to mark the process as inactive until the corresponding WAKEUP call is made.
+
+17
+00:02:14,000 --> 00:02:24,000
+The SIGNAL handler is simpler: it increments the semaphore value and calls WAKEUP to mark as active any processes that were WAITing for this particular semaphore.
+
+18
+00:02:24,000 --> 00:02:33,000
+Eventually the round-robin scheduler will select a process that was WAITing and it will be able to decrement the semaphore and proceed.
+
+19
+00:02:33,000 --> 00:02:43,000
+Note that the code makes no provision for fairness, i.e., there's no guarantee that a WAITing process will eventually succeed in finding the semaphore non-zero.
+
+20
+00:02:43,000 --> 00:02:57,000
+The scheduler has a specific order in which it runs processes, so the next-in-sequence WAITing process will always get the semaphore even if there are later-in-sequence processes that have been WAITing longer.
+
+21
+00:02:57,000 --> 00:03:07,000
+If fairness is desired, WAIT could maintain a queue of waiting processes and use the queue to determine which process is next in line, independent of scheduling order.
+
+22
+00:03:07,000 --> 00:03:12,000
+Many ISAs support an instruction like the TEST-and-CLEAR instruction shown here.
+
+23
+00:03:12,000 --> 00:03:20,000
+The TCLR instruction reads the current value of a memory location and then sets it to zero, all as a single operation.
+
+24
+00:03:20,000 --> 00:03:25,000
+It's like a LD except that it zeros the memory location after reading its value.
+
+25
+00:03:25,000 --> 00:03:33,000
+To implement TCLR, the memory needs to support read-and-clear operations, as well as normal reads and writes.
+
+26
+00:03:33,000 --> 00:03:38,000
+The assembly code at the bottom of the slide shows how to use TCLR to implement a simple lock.
+
+27
+00:03:38,000 --> 00:03:43,000
+The program uses TCLR to access the value of the lock semaphore.
+
+28
+00:03:43,000 --> 00:03:51,000
+If the returned value in RC is zero, then some other process has the lock and the program loops to try TCLR again.
+
+29
+00:03:51,000 --> 00:03:59,000
+If the returned value is non-zero, the lock has been acquired and execution of the critical section can proceed.
+
+30
+00:03:59,000 --> 00:04:07,000
+In this case, TCLR has also set the lock to zero, so that other processes will be prevented from entering the critical section.
+
+31
+00:04:07,000 --> 00:04:16,000
+When the critical section has finished executing, a ST instruction is used to set the semaphore to a non-zero value.
+

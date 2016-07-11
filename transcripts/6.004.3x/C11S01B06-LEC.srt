@@ -1,0 +1,188 @@
+0
+00:00:00,000 --> 00:00:12,000
+Let's wrap up our discussion of system-level interconnect by considering how best to connect N components that need to send messages to one another, e.g., CPUs on a multicore chip.
+
+1
+00:00:12,000 --> 00:00:18,000
+Today such chips have a handful of cores, but soon they may have 100s or 1000s of cores.
+
+2
+00:00:18,000 --> 00:00:22,000
+We'll build our communications network using point-to-point links.
+
+3
+00:00:22,000 --> 00:00:28,000
+In our analysis, each point-to-point link is counted at a cost of 1 hardware unit.
+
+4
+00:00:28,000 --> 00:00:31,000
+Sending a message across a link requires one time unit.
+
+5
+00:00:31,000 --> 00:00:38,000
+And we'll assume that different links can operate in parallel, so more links will mean more message traffic.
+
+6
+00:00:38,000 --> 00:00:50,000
+We'll do an asymptotic analysis of the throughput (total messages per unit time), latency (worst-case time to deliver a single message), and hardware cost.
+
+7
+00:00:50,000 --> 00:00:56,000
+In other words, we'll make a rough estimate how these quantities change as N grows.
+
+8
+00:00:56,000 --> 00:01:02,000
+Note that in general the throughput and hardware cost are proportional to the number of point-to-point links.
+
+9
+00:01:02,000 --> 00:01:09,000
+Our baseline is the backplane bus discussed earlier, where all the components share a single communication channel.
+
+10
+00:01:09,000 --> 00:01:19,000
+With only a single channel, bus throughput is 1 message per unit time and a message can travel between any two components in one time unit.
+
+11
+00:01:19,000 --> 00:01:26,000
+Since each component has to have an interface to the shared channel, the total hardware cost is O(n).
+
+12
+00:01:26,000 --> 00:01:35,000
+In a ring network each component sends its messages to a single neighbor and the links are arranged so that its possible to reach all components.
+
+13
+00:01:35,000 --> 00:01:41,000
+There are N links in total, so the throughput and cost are both O(n).
+
+14
+00:01:41,000 --> 00:01:50,000
+The worst case latency is also O(n) since a message might have to travel across N-1 links to reach the neighbor that's immediately upstream.
+
+15
+00:01:50,000 --> 00:02:02,000
+Ring topologies are useful when message latency isn't important or when most messages are to the component that's immediately downstream, i.e., the components form a processing pipeline.
+
+16
+00:02:02,000 --> 00:02:09,000
+The most general network topology is when every component has a direct link to every other component.
+
+17
+00:02:09,000 --> 00:02:15,000
+There are O(N**2) links so the throughput and cost are both O(N**2).
+
+18
+00:02:15,000 --> 00:02:20,000
+And the latency is 1 time unit since each destination is directly accessible.
+
+19
+00:02:20,000 --> 00:02:27,000
+Although expensive, complete graphs offer very high throughput with very low latencies.
+
+20
+00:02:27,000 --> 00:02:38,000
+A variant of the complete graph is the crossbar switch where a particular row and column can be connected to form a link between particular A and B components
+
+21
+00:02:38,000 --> 00:02:44,000
+with the restriction that each row and each column can only carry 1 message during each time unit.
+
+22
+00:02:44,000 --> 00:02:53,000
+Assume that the first row and first column connect to the same component, and so on, i.e., that the example crossbar switch is being used to connect 4 components.
+
+23
+00:02:53,000 --> 00:02:59,000
+Then there are O(n) messages delivered each time unit, with a latency of 1.
+
+24
+00:02:59,000 --> 00:03:07,000
+There are N**2 switches in the crossbar, so the cost is O(N**2) even though there are only O(n) links.
+
+25
+00:03:07,000 --> 00:03:15,000
+In mesh networks, components are connected to some fixed number of neighboring components, in either 2 or 3 dimensions.
+
+26
+00:03:15,000 --> 00:03:23,000
+Hence the total number of links is proportional to the number of components, so both throughput and cost are O(n).
+
+27
+00:03:23,000 --> 00:03:34,000
+The worst-case latencies for mesh networks are proportional to length of the sides, so the latency is O(sqrt n) for 2D meshes and O(cube root n) for 3D meshes.
+
+28
+00:03:34,000 --> 00:03:47,000
+The orderly layout, constant per-node hardware costs, and modest worst-case latency make 2D 4-neighbor meshes a popular choice for the current generation of experimental multi-core processors.
+
+29
+00:03:47,000 --> 00:03:55,000
+Hypercube and tree networks offer logarithmic latencies, which for large N may be faster than mesh networks.
+
+30
+00:03:55,000 --> 00:04:09,000
+The original CM-1 Connection Machine designed in the 80's used a hypercube network to connect up to 65,536 very simple processors, each connected to 16 neighbors.
+
+31
+00:04:09,000 --> 00:04:17,000
+Later generations incorporated smaller numbers of more sophisticated processors, still connected by a hypercube network.
+
+32
+00:04:17,000 --> 00:04:28,000
+In the early 90's the last generation of Connection Machines used a tree network, with the clever innovation that the links towards the root of the tree had a higher message capacity.
+
+33
+00:04:28,000 --> 00:04:34,000
+Here's a summary of the theoretical latencies we calculated for the various topologies.
+
+34
+00:04:34,000 --> 00:04:43,000
+As a reality check, it's important to realize that the lower bound on the worst-case distance between components in our 3-dimensional world is O(cube root of N).
+
+35
+00:04:43,000 --> 00:04:48,000
+In the case of a 2D layout, the worst-case distance is O(sqrt N).
+
+36
+00:04:48,000 --> 00:04:49,000
+Since we know that the time to transmit a message is proportional to the distance traveled, we should modify our latency calculations to reflect this physical constraint.
+
+37
+00:04:49,000 --> 00:05:10,000
+Note that the bus and crossbar involve N connections to a single link, so here the lower-bound on the latency needs to reflect the capacitive load added by each connection.
+
+38
+00:05:10,000 --> 00:05:12,000
+The winner?
+
+39
+00:05:12,000 --> 00:05:25,000
+Mesh networks avoid the need for longer wires as the number of connected components grows and appear to be an attractive alternative for high-capacity communication networks connecting 1000's of processors.
+
+40
+00:05:25,000 --> 00:05:27,000
+Summarizing our discussion:
+
+41
+00:05:27,000 --> 00:05:38,000
+point-to-point links are in common use today for system-level interconnect, and as a result our systems are faster, more reliable, more energy-efficient and smaller than ever before.
+
+42
+00:05:38,000 --> 00:05:51,000
+Multi-signal parallel buses are still used for very-high-bandwidth connections to memories, with a lot of very careful engineering to avoid the electrical problems observed in earlier bus implementations.
+
+43
+00:05:51,000 --> 00:06:07,000
+Wireless connections are in common use to connect mobile devices to nearby components and there has been interesting work on how to allow mobile devices to discover what peripherals are nearby and enable them to connect automatically.
+
+44
+00:06:07,000 --> 00:06:12,000
+The upcoming generation of multi-core chips will have 10's to 100's of processing cores.
+
+45
+00:06:12,000 --> 00:06:22,000
+There is a lot ongoing research to determine which communication topology would offer the best combination of high communication bandwidth and low latency.
+
+46
+00:06:22,000 --> 00:06:28,000
+The next ten years will be an interesting time for on-chip network engineers!
+

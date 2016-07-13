@@ -1,0 +1,152 @@
+0
+00:00:00,000 --> 00:00:12,000
+In discussing out-of-order superscalar pipelined CPUs we commented that the costs grow very quickly relative to the performance gains, leading to the cost-performance curve shown here.
+
+1
+00:00:12,000 --> 00:00:19,000
+If we move down the curve, we can arrive at more efficient architectures that give, say, 1/2 the performance at a 1/4 of the cost.
+
+2
+00:00:19,000 --> 00:00:24,000
+When our applications involve independent computations that can be performed in a parallel,
+
+3
+00:00:24,000 --> 00:00:33,000
+it may be that we would be able to use two cores to provide the same performance as the original expensive core, but a fraction of the cost.
+
+4
+00:00:33,000 --> 00:00:42,000
+If the available parallelism allows us to use additional cores, we'll see a linear relationship between increased performance vs. increased cost.
+
+5
+00:00:42,000 --> 00:00:53,000
+The key, of course, is that desired computations can be divided into multiple tasks that can run independently, with little or no need for communication or coordination between the tasks.
+
+6
+00:00:53,000 --> 00:00:58,000
+What is the optimal tradeoff between core cost and the number of cores?
+
+7
+00:00:58,000 --> 00:01:04,000
+If our computation is arbitrarily divisible without incurring additional overhead,
+
+8
+00:01:04,000 --> 00:01:12,000
+then we would continue to move down the curve until we found the cost-performance point that gave us the desired performance at the least cost.
+
+9
+00:01:12,000 --> 00:01:25,000
+In reality, dividing the computation across many cores does involve some overhead, e.g., distributing the data and code, then collecting and aggregating the results, so the optimal tradeoff is harder to find.
+
+10
+00:01:25,000 --> 00:01:31,000
+Still, the idea of using a larger number of smaller, more efficient cores seems attractive.
+
+11
+00:01:31,000 --> 00:01:39,000
+Many applications have some computations that can be performed in parallel, but also have computations that won't benefit from parallelism.
+
+12
+00:01:39,000 --> 00:01:52,000
+To understand the speedup we might expect from exploiting parallelism, it's useful to perform the calculation proposed by computer scientist Gene Amdahl in 1967, now known as Amdahl's Law.
+
+13
+00:01:52,000 --> 00:01:58,000
+Suppose we're considering an enhancement that speeds up some fraction F of the task at hand by a factor of S.
+
+14
+00:01:58,000 --> 00:02:06,000
+As shown in the figure, the gray portion of the task now takes F/S of the time that it used to require.
+
+15
+00:02:06,000 --> 00:02:12,000
+Some simple arithmetic lets us calculate the overall speedup we get from using the enhancement.
+
+16
+00:02:12,000 --> 00:02:25,000
+One conclusion we can draw is that we'll benefit the most from enhancements that affect a large portion of the required computations, i.e., we want to make F as large a possible.
+
+17
+00:02:25,000 --> 00:02:31,000
+What's the best speedup we can hope for if we have many cores that can be used to speed up the parallel part of the task?
+
+18
+00:02:31,000 --> 00:02:39,000
+Here's the speedup formula based on F and S, where in this case F is the parallel fraction of the task.
+
+19
+00:02:39,000 --> 00:02:50,000
+If we assume that the parallel fraction of the task can be speed up arbitrarily by using more and more cores, we see that the best possible overall speed up is 1/(1-F).
+
+20
+00:02:50,000 --> 00:02:59,000
+For example, you write a program that can do 90% of its work in parallel, but the other 10% must be done sequentially.
+
+21
+00:02:59,000 --> 00:03:06,000
+The best overall speedup that can be achieved is a factor of 10, no matter how many cores you have at your disposal.
+
+22
+00:03:06,000 --> 00:03:16,000
+Turning the question around, suppose you have a 1000-core machine which you hope to be able to use to achieve a speedup of 500 on your target application.
+
+23
+00:03:16,000 --> 00:03:23,000
+You would need to be able parallelize 99.8% of the computation in order to reach your goal!
+
+24
+00:03:23,000 --> 00:03:30,000
+Clearly multicore machines are most useful when the target task has lots of natural parallelism.
+
+25
+00:03:30,000 --> 00:03:41,000
+Using multiple independent cores to execute a parallel task is called thread-level parallelism (TLP), where each core executes a separate computation "thread".
+
+26
+00:03:41,000 --> 00:03:50,000
+The threads are independent programs, so the execution model is potentially more flexible than the lock-step execution provided by vector machines.
+
+27
+00:03:50,000 --> 00:04:01,000
+When there are a small number of threads, you often see the cores sharing a common main memory, allowing the threads to communicate and synchronize by sharing a common address space.
+
+28
+00:04:01,000 --> 00:04:04,000
+We'll discuss this further in the next section.
+
+29
+00:04:04,000 --> 00:04:10,000
+This is the approach used in current multicore processors, which have between 2 and 12 cores.
+
+30
+00:04:10,000 --> 00:04:20,000
+Shared memory becomes a real bottleneck when there 10's or 100's of cores, since collectively they quickly overwhelm the available memory bandwidth.
+
+31
+00:04:20,000 --> 00:04:27,000
+In these architectures, threads communicate using a communication network to pass messages back and forth.
+
+32
+00:04:27,000 --> 00:04:31,000
+We discussed possible network topologies in an earlier lecture.
+
+33
+00:04:31,000 --> 00:04:45,000
+A cost-effective on-chip approach is to use a nearest-neighbor mesh network, which supports many parallel point-to-point communications, while still allowing multi-hop communication between any two cores.
+
+34
+00:04:45,000 --> 00:04:53,000
+Message passing is also used in computing clusters, where many ordinary CPUs collaborate on large tasks.
+
+35
+00:04:53,000 --> 00:04:58,000
+There's a standardized message passing interface (MPI) and
+
+36
+00:04:58,000 --> 00:05:09,000
+specialized, very high throughput, low latency message-passing communication networks (e.g., Infiniband) that make it easy to build high-performance computing clusters.
+
+37
+00:05:09,000 --> 00:05:17,000
+In the next couple of sections we'll look more closely at some of the issues involved in building shared-memory multicore processors.
+

@@ -1,0 +1,188 @@
+0
+00:00:00,000 --> 00:00:04,000
+For some applications, data naturally comes in vector or matrix form.
+
+1
+00:00:04,000 --> 00:00:14,000
+For example, a vector of digitized samples representing an audio waveform over time, or a matrix of pixel colors in a 2D image from a camera.
+
+2
+00:00:14,000 --> 00:00:29,000
+When processing that data, it's common to perform the same sequence of operations on each data element.
+
+3
+00:00:29,000 --> 00:00:29,000
+The example code shown here is computing a vector sum, where each component of one vector is added to the corresponding component of another vector.
+
+4
+00:00:29,000 --> 00:00:41,000
+By replicating the datapath portion of our CPU, we can design special-purpose vector processors capable of performing the same operation on many data elements in parallel.
+
+5
+00:00:41,000 --> 00:00:50,000
+Here we see that the register file and ALU have been replicated and the control signals from decoding the current instruction are shared by all the datapaths.
+
+6
+00:00:50,000 --> 00:01:01,000
+Data is fetched from memory in big blocks (very much like fetching a cache line) and the specified register in each datapath is loaded with one of the words from the block.
+
+7
+00:01:01,000 --> 00:01:07,000
+Similarly each datapath can contribute a word to be stored as a contiguous block in main memory.
+
+8
+00:01:07,000 --> 00:01:18,000
+In such machines, the width of the data buses to and from main memory is many words wide, so a single memory access provides data for all the datapaths in parallel.
+
+9
+00:01:18,000 --> 00:01:28,000
+Executing a single instruction on a machine with N datapaths is equivalent to executing N instructions on a conventional machine with a single datapath.
+
+10
+00:01:28,000 --> 00:01:35,000
+The result achieves a lot of parallelism without the complexities of out-of-order superscalar execution.
+
+11
+00:01:35,000 --> 00:01:39,000
+Suppose we had a vector processor with 16 datapaths.
+
+12
+00:01:39,000 --> 00:01:45,000
+Let's compare its performance on a vector-sum operation to that of a conventional pipelined Beta processor.
+
+13
+00:01:45,000 --> 00:01:51,000
+Here's the Beta code, carefully organized to avoid any data hazards during execution.
+
+14
+00:01:51,000 --> 00:02:00,000
+There are 9 instructions in the loop, taking 10 cycles to execute if we count the NOP introduced into the pipeline when the BNE at the end of the loop is taken.
+
+15
+00:02:00,000 --> 00:02:08,000
+It takes 160 cycles to sum all 16 elements assuming no additional cycles are required due to cache misses.
+
+16
+00:02:08,000 --> 00:02:15,000
+And here's the corresponding code for a vector processor where we've assumed constant-sized 16-element vectors.
+
+17
+00:02:15,000 --> 00:02:26,000
+Note that "V" registers refer to a particular location in the register file associated with each datapath, while the "R" registers are the conventional Beta registers used for address computations, etc.
+
+18
+00:02:26,000 --> 00:02:33,000
+It would only take 4 cycles for the vector processor to complete the desired operations, a speed-up of 40.
+
+19
+00:02:33,000 --> 00:02:37,000
+This example shows the best-possible speed-up.
+
+20
+00:02:37,000 --> 00:02:44,000
+The key to a good speed-up is our ability to "vectorize" the code and take advantage of all the datapaths operating in parallel.
+
+21
+00:02:44,000 --> 00:02:57,000
+This isn't possible for every application, but for tasks like audio or video encoding and decoding, and all sorts of digital signal processing, vectorization is very doable.
+
+22
+00:02:57,000 --> 00:03:05,000
+Memory operations enjoy a similar performance improvement since the access overhead is amortized over large blocks of data.
+
+23
+00:03:05,000 --> 00:03:11,000
+You might wonder if it's possible to efficiently perform data-dependent operations on a vector processor.
+
+24
+00:03:11,000 --> 00:03:20,000
+Data-dependent operations appear as conditional statements on conventional machines, where the body of the statement is executed if the condition is true.
+
+25
+00:03:20,000 --> 00:03:29,000
+If testing and branching is under the control of the single-instruction execution engine, how can we take advantage of the parallel datapaths?
+
+26
+00:03:29,000 --> 00:03:34,000
+The trick is provide each datapath with a local predicate flag.
+
+27
+00:03:34,000 --> 00:03:46,000
+Use a vectorized compare instruction (CMPLT.V) to perform the a[i] < b[i] comparisons in parallel and remember the result locally in each datapath's predicate flag.
+
+28
+00:03:46,000 --> 00:03:55,000
+Then extend the vector ISA to include "predicated instructions" which check the local predicate to see if they should execute or do nothing.
+
+29
+00:03:55,000 --> 00:04:05,000
+In this example, ADDC.V.iftrue only performs the ADDC on the local data if the local predicate flag is true.
+
+30
+00:04:05,000 --> 00:04:14,000
+Instruction predication is also used in many non-vector architectures to avoid the execution-time penalties associated with mis-predicted conditional branches.
+
+31
+00:04:14,000 --> 00:04:24,000
+They are particularly useful for simple arithmetic and boolean operations (i.e., very short instruction sequences) that should be executed only if a condition is met.
+
+32
+00:04:24,000 --> 00:04:36,000
+The x86 ISA includes a conditional move instruction, and in the 32-bit ARM ISA almost all instructions can be conditionally executed.
+
+33
+00:04:36,000 --> 00:04:44,000
+The power of vector processors comes from having 1 instruction initiate N parallel operations on N pairs of operands.
+
+34
+00:04:44,000 --> 00:04:58,000
+Most modern CPUs incorporate vector extensions that operate in parallel on 8-, 16-, 32- or 64-bit operands organized as blocks of 128-, 256-, or 512-bit data.
+
+35
+00:04:58,000 --> 00:05:05,000
+Often all that's needed is some simple additional logic on an ALU designed to process full-width operands.
+
+36
+00:05:05,000 --> 00:05:14,000
+The parallelism is baked into the vector program, not discovered on-the-fly by the instruction dispatch and execution machinery.
+
+37
+00:05:14,000 --> 00:05:26,000
+Writing the specialized vector programs is a worthwhile investment for certain library functions which see a lot use in processing today's information streams with their heavy use of images, and A/V material.
+
+38
+00:05:26,000 --> 00:05:39,000
+Perhaps the best example of architectures with many datapaths operating in parallel are the graphics processing units (GPUs) found in almost all computer graphics systems.
+
+39
+00:05:39,000 --> 00:05:48,000
+GPU datapaths are typically specialized for 32- and 64-bit floating point operations found in the algorithms needed to display in real-time
+
+40
+00:05:48,000 --> 00:05:55,000
+a 3D scene represented as billions of triangular patches as a 2D image on the computer screen.
+
+41
+00:05:55,000 --> 00:06:04,000
+Coordinate transformation, pixel shading and antialiasing, texture mapping, etc., are examples of "embarrassingly parallel" computations
+
+42
+00:06:04,000 --> 00:06:10,000
+where the parallelism comes from having to perform the same computation independently on millions of different data objects.
+
+43
+00:06:10,000 --> 00:06:20,000
+Similar problems can be found in the fields of bioinformatics, big data processing, neural net emulation used in deep machine learning, and so on.
+
+44
+00:06:20,000 --> 00:06:29,000
+Increasingly, GPUs are used in many interesting scientific and engineering calculations and not just as graphics engines.
+
+45
+00:06:29,000 --> 00:06:36,000
+Data-level parallelism provides significant performance improvements in a variety of useful situations.
+
+46
+00:06:36,000 --> 00:06:44,000
+So current and future ISAs will almost certainly include support for vector operations.
+

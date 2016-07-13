@@ -1,0 +1,180 @@
+0
+00:00:00,000 --> 00:00:03,000
+And now we've reached the end of 6.004.
+
+1
+00:00:03,000 --> 00:00:11,000
+Looking back, there are two ways of thinking about the material we've discussed, the skills we've practiced, and the designs we've completed.
+
+2
+00:00:11,000 --> 00:00:18,000
+Starting at devices, we've worked our way up the design hierarchy, each level serving as building blocks for the next.
+
+3
+00:00:18,000 --> 00:00:29,000
+Along the way we thought about design tradeoffs, choosing the alternatives that would make our systems reliable, efficient and easy to understand and hence easy to maintain.
+
+4
+00:00:29,000 --> 00:00:40,000
+In the other view of 6.004, we created and then used a hierarchy of engineering abstractions that are reasonably independent of the technologies they encapsulate.
+
+5
+00:00:40,000 --> 00:00:47,000
+Even though technologies change at a rapid pace, these abstractions embody principles that are timeless.
+
+6
+00:00:47,000 --> 00:00:57,000
+For example, the symbolic logic described by George Boole in 1847 is still used to reason about the operation of digital circuits you and I design today.
+
+7
+00:00:57,000 --> 00:01:06,000
+The power of engineering abstractions is that they allow us to reason about the behavior of a system based on the behavior of the components
+
+8
+00:01:06,000 --> 00:01:10,000
+without having to understand the implementation details of each component.
+
+9
+00:01:10,000 --> 00:01:21,000
+The advantage of viewing components as "black boxes" implementing some specified function is that the implementation can change as long as the same specification is satisfied.
+
+10
+00:01:21,000 --> 00:01:34,000
+In my lifetime, the size of a 2-input NAND gate has shrunk by 10 orders of magnitude, yet a 50-year-old logic design would still work as intended if implemented in today's technologies.
+
+11
+00:01:34,000 --> 00:01:44,000
+Imagine trying to build a circuit that added two binary numbers if you had to reason about the electrical properties of doped silicon and conducting metals.
+
+12
+00:01:44,000 --> 00:01:53,000
+Using abstractions lets us limit the design complexity at each level, shortening design time and making it easier to verify that the specifications have been met.
+
+13
+00:01:53,000 --> 00:02:01,000
+And once we've created a useful repertoire of building blocks, we can use them again and again to assemble many different systems.
+
+14
+00:02:01,000 --> 00:02:09,000
+Our goal in 6.004 is to demystify how computers work, starting with MOSFETs and working our way up to operating systems.
+
+15
+00:02:09,000 --> 00:02:18,000
+We hope you've understood the engineering abstractions we've introduced and had a chance to practice using them when completing the design problems offered in the labs.
+
+16
+00:02:18,000 --> 00:02:27,000
+We also hope that you'll also understand their limitations and have the confidence to create new abstractions when tackling new engineering tasks.
+
+17
+00:02:27,000 --> 00:02:32,000
+Good engineers use abstractions, but great engineers create them.
+
+18
+00:06:04,000 --> 00:02:40,000
+principles used at each level of the design hierarchy.
+
+19
+00:02:40,000 --> 00:02:49,000
+If a particular topic struck you as especially interesting, we hope you'll seek out a more advanced course that will let you dig deeper into that engineering discipline.
+
+20
+00:02:49,000 --> 00:02:56,000
+Hundreds of thousands of engineers have worked to create the digital systems that are the engines of today's information society.
+
+21
+00:02:56,000 --> 00:03:05,000
+As you can imagine, there's no end of interesting engineering to explore and master -- so roll up your sleeves and come join in the fun!
+
+22
+00:03:05,000 --> 00:03:08,000
+What will be the engineering challenges of tomorrow?
+
+23
+00:03:08,000 --> 00:03:13,000
+Here are a few thoughts about how the future of computing may be very different than the present.
+
+24
+00:03:13,000 --> 00:03:17,000
+The systems we build today have a well-defined notion of state:
+
+25
+00:03:17,000 --> 00:03:23,000
+the exact digital values stored in their memories, produced by their logic components, and traveling along their interconnect.
+
+26
+00:03:23,000 --> 00:03:34,000
+But computation based on the principles of quantum mechanics may allow us to solve what are now intractable problems using states described not as collections of 1's and 0's,
+
+27
+00:03:34,000 --> 00:03:39,000
+but as interrelated probabilities that describe the superposition of many states.
+
+28
+00:03:39,000 --> 00:03:50,000
+We've built our systems using voltages to encode information and voltage-controlled switches to perform computation, using silicon-based electrical devices.
+
+29
+00:03:50,000 --> 00:03:59,000
+But the chemistry of life has been carrying out detailed manufacturing operations for millennia using information encoded as sequences of amino acids.
+
+30
+00:03:59,000 --> 00:04:07,000
+Some of the information encoded in our DNA has been around for millions of years, a truly long-lived information system!
+
+31
+00:04:07,000 --> 00:04:13,000
+Today biologists are starting to build computational components from biological materials.
+
+32
+00:04:13,000 --> 00:04:18,000
+Maybe in 50 years instead of plugging in your laptop, you'll have to feed it :)
+
+33
+00:04:18,000 --> 00:04:28,000
+Instead of using truth tables and logic functions, some computations are best performed neural networks that operate by forming appropriately weighted combinations of analog inputs,
+
+34
+00:04:28,000 --> 00:04:34,000
+where the weights are learned by the system as it is trained using example inputs that should produce known outputs.
+
+35
+00:04:34,000 --> 00:04:40,000
+Artificial neural nets are thought to model the operation of the synapses and neurons in our brains.
+
+36
+00:04:40,000 --> 00:04:49,000
+As we learn more about how the brain operates, we may get many new insights into how to implement systems that are good at recognition and reasoning.
+
+37
+00:04:49,000 --> 00:05:00,000
+Again using living organisms as useful models, programming may be replaced by learning, where stimulus and feedback are used to evolve system behavior.
+
+38
+00:05:00,000 --> 00:05:08,000
+In other words, systems will use adaptation mechanisms to evolve the desired functionality rather than have it explicitly programmed.
+
+39
+00:05:08,000 --> 00:05:17,000
+This all seems the stuff of science fiction, but I suspect our parents feel the same way about having conversations with Siri about tomorrow's weather.
+
+40
+00:05:17,000 --> 00:05:20,000
+Thanks for joining us here in 6.004.
+
+41
+00:05:20,000 --> 00:05:26,000
+We've enjoyed presenting the material and challenging you with design tasks to exercise your new skills and understanding.
+
+42
+00:05:26,000 --> 00:05:33,000
+There are interesting times ahead in the world of digital systems and we can certainly use your help in inventing the future!
+
+43
+00:05:33,000 --> 00:05:39,000
+We'd welcome any feedback you have about the course so please feel free leave comments in the forum.
+
+44
+00:05:39,000 --> 00:05:43,000
+Good bye for now... and good luck in your future studies.
+

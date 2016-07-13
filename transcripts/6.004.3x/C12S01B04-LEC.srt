@@ -1,0 +1,200 @@
+0
+00:00:00,000 --> 00:00:04,000
+A conceptual schematic for a multicore processor is shown below.
+
+1
+00:00:04,000 --> 00:00:12,000
+To reduce the average memory access time, each of the four cores has its own cache, which will satisfy most memory requests.
+
+2
+00:00:12,000 --> 00:00:17,000
+If there's a cache miss, a request is sent to the shared main memory.
+
+3
+00:00:17,000 --> 00:00:27,000
+With a modest number of cores and a good cache hit ratio, the number of memory requests that must access main memory during normal operation should be pretty small.
+
+4
+00:00:27,000 --> 00:00:33,000
+To keep the number of memory accesses to a minimum, the caches implement a write-back strategy,
+
+5
+00:00:33,000 --> 00:00:40,000
+where ST instructions update the cache, but main memory is only updated when a dirty cache line is replaced.
+
+6
+00:00:40,000 --> 00:00:50,000
+Our goal is that each core should share the contents of main memory, i.e., changes made by one core should visible to all the other cores.
+
+7
+00:00:50,000 --> 00:00:57,000
+In the example shown here, core 0 is running Thread A and core 1 is running Thread B.
+
+8
+00:00:57,000 --> 00:01:04,000
+Both threads reference two shared memory locations holding the values for the variables X and Y.
+
+9
+00:01:04,000 --> 00:01:09,000
+The current values of X and Y are 1 and 2, respectively.
+
+10
+00:01:09,000 --> 00:01:14,000
+Those values are held in main memory as well as being cached by each core.
+
+11
+00:01:14,000 --> 00:01:17,000
+What happens when the threads are executed?
+
+12
+00:01:17,000 --> 00:01:22,000
+Each thread executes independently, updating its cache during stores to X and Y.
+
+13
+00:01:22,000 --> 00:01:32,000
+For any possible execution order, either concurrent or sequential, the result is the same: Thread A prints "2", Thread B prints "1".
+
+14
+00:01:32,000 --> 00:01:37,000
+Hardware engineers would point to the consistent outcomes and declare victory!
+
+15
+00:01:37,000 --> 00:01:42,000
+But closer examination of the final system state reveals some problems.
+
+16
+00:01:42,000 --> 00:01:47,000
+After execution is complete, the two cores disagree on the values of X and Y.
+
+17
+00:01:47,000 --> 00:01:52,000
+Threads running on core 0 will see X=3 and Y=2.
+
+18
+00:01:52,000 --> 00:01:56,000
+Threads running on core 1 will see X=1 and Y=4.
+
+19
+00:01:56,000 --> 00:02:01,000
+Because of the caches, the system isn't behaving as if there's a single shared memory.
+
+20
+00:02:01,000 --> 00:02:12,000
+On the other hand, we can't eliminate the caches since that would cause the average memory access time to skyrocket, ruining any hoped-for performance improvement from using multiple cores.
+
+21
+00:02:12,000 --> 00:02:15,000
+What outcome should we expect?
+
+22
+00:02:15,000 --> 00:02:21,000
+One plausible standard of correctness is the outcome when the threads are run a single timeshared core.
+
+23
+00:02:21,000 --> 00:02:31,000
+The argument would be that a multicore implementation should produce the same outcome but more quickly, with parallel execution replacing timesharing.
+
+24
+00:02:31,000 --> 00:02:39,000
+The table shows the possible results of the timesharing experiment, where the outcome depends on the order in which the statements are executed.
+
+25
+00:02:39,000 --> 00:02:52,000
+Programmers will understand that there is more than one possible outcome and know that they would have to impose additional constraints on execution order, say, using semaphores, if they wanted a specific outcome.
+
+26
+00:02:52,000 --> 00:03:02,000
+Notice that the multicore outcome of 2,1 doesn't appear anywhere on the list of possible outcomes from sequential timeshared execution.
+
+27
+00:03:02,000 --> 00:03:12,000
+The notion that executing N threads in parallel should correspond to some interleaved execution of those threads on a single core is called "sequential consistency".
+
+28
+00:03:12,000 --> 00:03:21,000
+If multicore systems implement sequential consistency, then programmers can think of the systems as providing hardware-accelerated timesharing.
+
+29
+00:03:21,000 --> 00:03:24,000
+So, our simple multicore system fails on two accounts.
+
+30
+00:03:24,000 --> 00:03:33,000
+First, it doesn't correctly implement a shared memory since, as we've seen, it's possible for the two cores to disagree about the current value of a shared variable.
+
+31
+00:03:33,000 --> 00:03:39,000
+Second, as a consequence of the first problem, the system doesn't implement sequential consistency.
+
+32
+00:03:39,000 --> 00:03:42,000
+Clearly, we'll need to figure out a fix!
+
+33
+00:03:42,000 --> 00:03:46,000
+One possible fix is to give up on sequential consistency.
+
+34
+00:03:46,000 --> 00:03:56,000
+An alternative memory semantics is "weak consistency", which only requires that the memory operations from each thread appear to be performed in the order issued by that thread.
+
+35
+00:03:56,000 --> 00:04:08,000
+In other words, in a weakly consistent system, if a particular thread writes to X and then writes to Y, the possible outcomes from reads of X and Y by any thread would be one of
+
+36
+00:04:08,000 --> 00:04:10,000
+(unchanged X, unchanged Y),
+
+37
+00:04:10,000 --> 00:04:13,000
+or (changed X, unchanged Y),
+
+38
+00:04:13,000 --> 00:04:16,000
+or (changed X, changed Y).
+
+39
+00:04:16,000 --> 00:04:21,000
+But no thread would see changed Y but unchanged X.
+
+40
+00:04:21,000 --> 00:04:30,000
+In a weakly consistent system, memory operations from other threads may overlap in arbitrary ways (not necessarily consistent with any sequential interleaving).
+
+41
+00:04:30,000 --> 00:04:37,000
+Note that our multicore cache system doesn't itself guarantee even weak consistency.
+
+42
+00:04:37,000 --> 00:04:48,000
+A thread that executes "write X; write Y" will update its local cache, but later cache replacements may cause the updated Y value to be written to main memory before the updated X value.
+
+43
+00:04:48,000 --> 00:04:58,000
+To implement weak consistency, the thread should be modified to "write X; communicate changes to all other processors; write Y".
+
+44
+00:04:58,000 --> 00:05:05,000
+In the next section, we'll discuss how to modify the caches to perform the required communication automatically.
+
+45
+00:05:05,000 --> 00:05:15,000
+Out-of-order cores have an extra complication since there's no guarantee that successive ST instructions will complete in the order they appeared in the program.
+
+46
+00:05:15,000 --> 00:05:25,000
+These architectures provide a BARRIER instruction that guarantees that memory operations before the BARRIER are completed before memory operation executed after the BARRIER.
+
+47
+00:05:25,000 --> 00:05:35,000
+There are many types of memory consistency -- each commercially-available multicore system has its own particular guarantees about what happens when.
+
+48
+00:05:35,000 --> 00:05:44,000
+So the prudent programmer needs to read the ISA manual carefully to ensure that her program will do what she wants.
+
+49
+00:05:44,000 --> 00:05:50,000
+See the referenced PDF file for a very readable discussion about memory semantics in multicore systems.
+

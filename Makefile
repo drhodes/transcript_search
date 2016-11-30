@@ -1,5 +1,5 @@
-TRANSCRIPT_FILE=./js/json-transcripts/6.004.3x.json
-TRANSCRIPT_PATH=./transcripts/6.004.3x
+TRANSCRIPT_FILE=./js/json-transcripts/6.004.2x.json
+TRANSCRIPT_PATH=./transcripts/6.004.2x
 
 build:
 	echo ok

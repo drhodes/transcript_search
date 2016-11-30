@@ -12,25 +12,9 @@ PROG_DESCRIPTION = '''
 Generate a JSON blob given a collection of .SRT files
 '''
 
-
-# URL_TEMPLATE = (
-#     "https://courses.edx.org/courses/"
-#     "course-v1:MITx+6.004.3x+2T2016/"
-#     #"course-v1:MITx+6.004.2x+3T2015/"
-#     "courseware/c<CHAPTER>/c<CHAPTER>s<SEQ>/<BLOCK>"
-#     "?activate_block_id=block-v1"
-#     "%3AMITx"
-#     "%2B6.004.2x"
-#     "%2B3T2015"
-#     "%2Btype"
-#     "%40discussion"
-#     "%2Bblock"
-#     "%40c<CHAPTER>s<SEQ>v<BLOCK>"
-# )
-
 URL_TEMPLATE = (
     "https://courses.edx.org/courses/"
-    "course-v1:MITx+6.004.3x+2T2016/"
+    "course-v1:MITx+6.004.2x_2+3T2016"
     "courseware/c<CHAPTER>/c<CHAPTER>s<SEQ>/<BLOCK>"
     "?activate_block_id=block-v1"
     "%3AMITx"
@@ -41,21 +25,6 @@ URL_TEMPLATE = (
     "%2Bblock"
     "%40c<CHAPTER>s<SEQ>v<BLOCK>"
 )
-
-
-
-# https://courses.edx.org/courses/
-# course-v1:MITx+6.004.2x+3T2015/
-# courseware/c4/c4s1/1
-# ?activate_block_id=block-v1
-# %3AMITx
-# %2B6.004.2x
-# %2B3T2015
-# %2Btype
-# %40discussion
-# %2Bblock%40c4s1v1
-
-
 
 def get_srt_filenames(srt_path):
     # this needs to change to os.walk if sub directories are used.

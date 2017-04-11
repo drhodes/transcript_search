@@ -14,12 +14,12 @@ Generate a JSON blob given a collection of .SRT files
 
 URL_TEMPLATE = (
     "https://courses.edx.org/courses/"
-    "course-v1:MITx+6.004.2x_2+3T2016/"
+    "course-v1:MITx+6.004.3x_2+1T2017/"
     "courseware/c<CHAPTER>/c<CHAPTER>s<SEQ>/<BLOCK>"
     "?activate_block_id=block-v1"
     "%3AMITx"
     "%2B6.004.3x"
-    "%2B2T2016"
+    "%2B2T2017"
     "%2Btype"
     "%40discussion"
     "%2Bblock"
